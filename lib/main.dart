@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'screens/explore_screen.dart';
+import 'screens/profile_screen.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -13,7 +16,8 @@ class MyApp extends StatelessWidget {
       title: 'PickMe',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0077B6)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff8CE4FF)),
+        useMaterial3: true,
         fontFamily: 'Plus Jakarta Sans',
       ),
       home: const SplashScreen(),
@@ -67,9 +71,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 3200), () {
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
     });
   }
 
@@ -110,11 +114,11 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 144,
                   width: 144,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0077B6),
+                    color: const Color(0xff8CE4FF),
                     borderRadius: BorderRadius.circular(72),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x4D0077B6),
+                        color: Color(0x668CE4FF),
                         blurRadius: 28,
                         offset: Offset(0, 14),
                       ),
@@ -142,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen>
                             TextSpan(text: 'Pick'),
                             TextSpan(
                               text: 'Me',
-                              style: TextStyle(color: Color(0xFF0077B6)),
+                              style: TextStyle(color: Color(0xff8CE4FF)),
                             ),
                           ],
                         ),
@@ -188,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 26,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.4,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF0077B6)),
+                    valueColor: AlwaysStoppedAnimation(Color(0xff8CE4FF)),
                   ),
                 ),
               ),
@@ -199,23 +203,42 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = const [
+    PickMeExplorePage(),
+    PickMeProfilePage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PickMe')),
-      body: const Center(
-        child: Text(
-          'Welcome to PickMe',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Explore',
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
