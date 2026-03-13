@@ -9,61 +9,195 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PickMe',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff00B4D8)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff8CE4FF)),
         useMaterial3: true,
+        fontFamily: 'Plus Jakarta Sans',
       ),
-      home: const PickMeExplorePage(),
+      home: const SplashScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _logoOpacity;
+  late final Animation<Offset> _textSlide;
+  late final Animation<double> _textOpacity;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+
+    _logoScale = Tween<double>(
+      begin: 0.85,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    _logoOpacity = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _textSlide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _textOpacity = Tween<double>(
+      begin: 0.2,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+
+    Future.delayed(const Duration(milliseconds: 3200), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const PickMeExplorePage()),
+      );
     });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF8CE4FF), Colors.white],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(),
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _logoOpacity.value,
+                    child: Transform.scale(
+                      scale: _logoScale.value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Container(
+                  height: 144,
+                  width: 144,
+                  decoration: BoxDecoration(
+                    color: const Color(0xff8CE4FF),
+                    borderRadius: BorderRadius.circular(72),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x668CE4FF),
+                        blurRadius: 28,
+                        offset: Offset(0, 14),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.eco, size: 74, color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 30),
+              SlideTransition(
+                position: _textSlide,
+                child: FadeTransition(
+                  opacity: _textOpacity,
+                  child: Column(
+                    children: [
+                      RichText(
+                        text: const TextSpan(
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 48,
+                            letterSpacing: -1,
+                          ),
+                          children: [
+                            TextSpan(text: 'Pick'),
+                            TextSpan(
+                              text: 'Me',
+                              style: TextStyle(color: Color(0xff8CE4FF)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'SUSTAINABLE THRIFT',
+                        style: TextStyle(
+                          color: Color(0xFF475569),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 2,
+                        width: 52,
+                        decoration: BoxDecoration(
+                          color: const Color(0x668CE4FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'GIVE CLOTHES A SECOND LIFE',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 2.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Spacer(),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 34),
+                child: SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation(Color(0xff8CE4FF)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
