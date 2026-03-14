@@ -13,7 +13,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _locationController;
   bool _isPublic = true;
   bool _pushNotifications = false;
-  List<String> _interests = ["#composting", "#solar"];
+  final List<String> _interests = ["#composting", "#solar"];
 
   @override
   void initState() {
@@ -597,7 +597,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   _isPublic = value;
                                 });
                               },
-                              activeColor: const Color(0xff8CE4FF),
+                              activeThumbColor: const Color(0xff8CE4FF),
                             ),
                           ],
                         ),
@@ -649,7 +649,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   _pushNotifications = value;
                                 });
                               },
-                              activeColor: const Color(0xff8CE4FF),
+                              activeThumbColor: const Color(0xff8CE4FF),
                             ),
                           ],
                         ),
