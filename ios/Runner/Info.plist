@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
+	<key>GoogleMapsAPIKey</key>
+	<string>YOUR_GOOGLE_MAPS_API_KEY_HERE</string>
 </dict>
 </plist>

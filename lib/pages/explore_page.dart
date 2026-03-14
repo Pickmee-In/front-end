@@ -7,20 +7,34 @@ class PickMeExplorePage extends StatefulWidget {
   State<PickMeExplorePage> createState() => _PickMeExplorePageState();
 }
 
-class _PickMeExplorePageState extends State<PickMeExplorePage> {
+class _PickMeExplorePageState extends State<PickMeExplorePage>
+    with SingleTickerProviderStateMixin {
   String activeFilter = "All";
   bool isFavorite = false;
   late TransformationController _transformationController;
+  late AnimationController _blinkController;
+  late Animation<double> _blinkAnimation;
 
   @override
   void initState() {
     super.initState();
     _transformationController = TransformationController();
+    
+    // Setup blinking animation
+    _blinkController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _blinkAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
     _transformationController.dispose();
+    _blinkController.dispose();
     super.dispose();
   }
 
@@ -199,15 +213,24 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
                           color: Color(0xff8CE4FF),
                         ),
                       ),
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
+                      AnimatedBuilder(
+                        animation: _blinkAnimation,
+                        builder: (context, child) {
+                          return Opacity(
+                            opacity: _blinkAnimation.value,
+                            child: child,
+                          );
+                        },
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          child: const Icon(Icons.storefront,
+                              color: Colors.black, size: 28),
                         ),
-                        child: const Icon(Icons.storefront,
-                            color: Colors.black, size: 28),
                       ),
                     ],
                   ),

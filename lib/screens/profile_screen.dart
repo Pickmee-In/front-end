@@ -4,6 +4,7 @@ import 'package:front_end/widgets/profile/profile_header.dart';
 import 'package:front_end/widgets/profile/stat_card.dart';
 import 'package:front_end/widgets/profile/level_card.dart';
 import 'package:front_end/widgets/profile/item_card.dart';
+import 'package:front_end/pages/onboarding_page.dart';
 
 class PickMeProfilePage extends StatelessWidget {
   const PickMeProfilePage({super.key});
@@ -152,6 +153,17 @@ class PickMeProfilePage extends StatelessWidget {
                             color: Colors.black,
                           ),
                         ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.help_outline, color: Colors.black),
+                        tooltip: 'View Tutorial',
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const OnboardingPage(),
+                            ),
+                          );
+                        },
                       ),
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.black),

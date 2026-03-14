@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class PickMeExplorePage extends StatefulWidget {
   const PickMeExplorePage({super.key});
@@ -10,26 +11,112 @@ class PickMeExplorePage extends StatefulWidget {
 class _PickMeExplorePageState extends State<PickMeExplorePage> {
   String activeFilter = "All";
   bool isFavorite = false;
-  late TransformationController _transformationController;
+  GoogleMapController? _mapController;
+
+  /// Sample store locations
+  final List<StoreMarker> stores = [
+    StoreMarker(
+      name: "Green Thread Shop",
+      latlng: const LatLng(40.7128, -74.0060),
+      image:
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy",
+      rating: 4.8,
+      reviews: 124,
+      distance: 0.5,
+    ),
+    StoreMarker(
+      name: "Eco Boutique",
+      latlng: const LatLng(40.7580, -73.9855),
+      image:
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy",
+      rating: 4.5,
+      reviews: 89,
+      distance: 1.2,
+    ),
+    StoreMarker(
+      name: "Sustainable Living",
+      latlng: const LatLng(40.7489, -73.9680),
+      image:
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy",
+      rating: 4.7,
+      reviews: 156,
+      distance: 0.8,
+    ),
+  ];
+
+  Set<Marker> markers = {};
+  int selectedStoreIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _transformationController = TransformationController();
+    _initializeMarkers();
+  }
+
+  void _initializeMarkers() {
+    markers = stores.asMap().entries.map((entry) {
+      int index = entry.key;
+      StoreMarker store = entry.value;
+
+      return Marker(
+        markerId: MarkerId(store.name),
+        position: store.latlng,
+        onTap: () {
+          setState(() {
+            selectedStoreIndex = index;
+          });
+          _animateToStore(store.latlng);
+        },
+        infoWindow: InfoWindow(
+          title: store.name,
+          snippet: "⭐ ${store.rating} • ${store.reviews} reviews",
+        ),
+      );
+    }).toSet();
+  }
+
+  void _animateToStore(LatLng location) {
+    if (_mapController == null) return;
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: location,
+          zoom: 15,
+        ),
+      ),
+    );
+  }
+
+  void _zoomIn() {
+    if (_mapController == null) return;
+    _mapController!.animateCamera(
+      CameraUpdate.zoomIn(),
+    );
+  }
+
+  void _zoomOut() {
+    if (_mapController == null) return;
+    _mapController!.animateCamera(
+      CameraUpdate.zoomOut(),
+    );
+  }
+
+  void _goToCurrentLocation() {
+    if (_mapController == null) return;
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        const CameraPosition(
+          target: LatLng(40.7128, -74.0060),
+          zoom: 14,
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
-    _transformationController.dispose();
+    _mapController?.dispose();
     super.dispose();
-  }
-
-  void _zoomIn() {
-    _transformationController.value = Matrix4.identity()..scale(1.5);
-  }
-
-  void _zoomOut() {
-    _transformationController.value = Matrix4.identity();
   }
 
   @override
@@ -37,23 +124,19 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
     return Scaffold(
       body: Stack(
         children: [
-          /// MAP BACKGROUND
-          InteractiveViewer(
-            transformationController: _transformationController,
-            boundaryMargin: const EdgeInsets.all(0),
-            minScale: 1.0,
-            maxScale: 4.0,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                      "https://lh3.googleusercontent.com/aida-public/AB6AXuA-EupBWeTRH7q3lc86YKz8V74NPniD7WzBQZ2G1CLvX_kiRNZpK0yipYpKOI2SrJ-eW9KyjUH7hI9_bAdBKio-YXii7pDMU4DQb-k2t95qSpUqtHQxJXM1AuNwyR9jjDhlTDQ50FKvNn3rJtgYPuSkZveKVlWXQ3vPIti_o82lqstGD9Gu4eK_6r8eMTRKl2wdAOYawfAVhp0aJns4jz5uhNGwYaG7EAmqDAgnr6zTdH2que6Jgaz5CGDJz_QLJkb4mepupzh683y0"),
-                  fit: BoxFit.cover,
-                ),
-              ),
+          /// GOOGLE MAP
+          GoogleMap(
+            onMapCreated: (controller) {
+              _mapController = controller;
+            },
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(40.7128, -74.0060),
+              zoom: 14,
             ),
+            markers: markers,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
           ),
 
           /// HEADER WITH SEARCH & FILTERS
@@ -235,11 +318,7 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
                 const SizedBox(height: 12),
                 mapActionButton(Icons.remove, _zoomOut),
                 const SizedBox(height: 12),
-                mapActionButton(Icons.near_me, () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('📍 Current location')),
-                  );
-                }),
+                mapActionButton(Icons.near_me, _goToCurrentLocation),
               ],
             ),
           ),
@@ -249,7 +328,7 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
             bottom: 80,
             left: 16,
             right: 16,
-            child: shopDetailCard(),
+            child: shopDetailCard(stores[selectedStoreIndex]),
           ),
         ],
       ),
@@ -323,7 +402,7 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
     );
   }
 
-  Widget shopDetailCard() {
+  Widget shopDetailCard(StoreMarker store) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -351,7 +430,7 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: Image.network(
-                      "https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy",
+                      store.image,
                       width: 70,
                       height: 70,
                       fit: BoxFit.cover,
@@ -396,10 +475,10 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            "Green Thread Shop",
-                            style: TextStyle(
+                            store.name,
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
@@ -434,18 +513,18 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      "⭐ 4.8 • 124 reviews",
-                      style: TextStyle(
+                    Text(
+                      "⭐ ${store.rating} • ${store.reviews} reviews",
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFFFFA500),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      "📍 0.5 KM • 🟢 Open until 6 PM",
-                      style: TextStyle(
+                    Text(
+                      "📍 ${store.distance} KM • 🟢 Open until 6 PM",
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Colors.grey,
                       ),
@@ -482,9 +561,9 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
                   ),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                            '🗺️ Opening directions to Green Thread Shop'),
+                            '🗺️ Opening directions to ${store.name}'),
                       ),
                     );
                   },
@@ -553,4 +632,22 @@ class _PickMeExplorePageState extends State<PickMeExplorePage> {
       ),
     );
   }
+}
+/// Store Marker Model
+class StoreMarker {
+  final String name;
+  final LatLng latlng;
+  final String image;
+  final double rating;
+  final int reviews;
+  final double distance;
+
+  StoreMarker({
+    required this.name,
+    required this.latlng,
+    required this.image,
+    required this.rating,
+    required this.reviews,
+    required this.distance,
+  });
 }
