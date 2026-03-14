@@ -1,7 +1,85 @@
 import 'package:flutter/material.dart';
+import 'login_page.dart';
 
-class OnboardingPage extends StatelessWidget {
+class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
+
+  @override
+  State<OnboardingPage> createState() => _OnboardingPageState();
+}
+
+class _OnboardingPageState extends State<OnboardingPage>
+    with SingleTickerProviderStateMixin {
+  int _currentIndex = 0;
+  late PageController _pageController;
+  late AnimationController _animationController;
+
+  final List<OnboardingSlide> slides = [
+    OnboardingSlide(
+      title: 'Millions of tons\ngo to waste.',
+      description:
+          'Give your unused clothes a second life. Join the circular fashion movement.',
+      icon: Icons.eco_rounded,
+      backgroundColor: const Color(0xff8CE4FF),
+      lightColor: const Color(0xff8CE4FF).withValues(alpha: 0.1),
+    ),
+    OnboardingSlide(
+      title: 'Buy sustainably,\nfashionably cheap.',
+      description:
+          'Find quality pre-loved clothes at unbeatable prices. Support sustainable fashion.',
+      icon: Icons.shopping_bag_rounded,
+      backgroundColor: const Color(0xff8CE4FF),
+      lightColor: const Color(0xff8CE4FF).withValues(alpha: 0.1),
+    ),
+    OnboardingSlide(
+      title: 'Connect with\nthe community.',
+      description:
+          'Chat, swap, and trade with other fashion enthusiasts. Build a circular wardrobe together.',
+      icon: Icons.people_rounded,
+      backgroundColor: const Color(0xff8CE4FF),
+      lightColor: const Color(0xff8CE4FF).withValues(alpha: 0.1),
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _goToNextSlide() {
+    if (_currentIndex < slides.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    }
+  }
+
+  void _goToPreviousSlide() {
+    if (_currentIndex > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,225 +88,190 @@ class OnboardingPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-
-            /// HEADER
+            // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xff8CE4FF).withOpacity(0.2),
+                          color: const Color(0xff8CE4FF).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          Icons.eco,
-                          color: Color(0xff44CCFF),
+                          Icons.eco_rounded,
+                          color: Color(0xff8CE4FF),
+                          size: 20,
                         ),
                       ),
-
                       const SizedBox(width: 8),
-
                       const Text(
-                        "PickMe",
+                        'PickMe',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          fontSize: 20,
+                          fontSize: 18,
+                          fontFamily: 'Plus Jakarta Sans',
+                          color: Colors.black87,
                         ),
                       ),
                     ],
                   ),
-
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                      );
                     },
-                    child: const Text(
-                      "Skip",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                ],
-              ),
-            ),
-
-            /// IMAGE
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 420,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                        "https://lh3.googleusercontent.com/aida-public/AB6AXuAA4p5vClULXXGvqnTLqWZIGGKfJSYlKz5WAFAv-UdG2FZfonUDkRHganpn6BBpQzi7kEj7JsJbq0gog1QLFlVkul1OYng0ZeDLRSPTe52YSgLCzB-SRvtC-ZkCqB-pYKm161r7mjDny-0qcQJhZ1J-WGFHgp5jGdN1QGHf2KmfemuQs5Rks5aAbb1FZ1AeQoEjrOdy1CVhWx2-M_VI2WM3dU2wBQD8LWVQn4fglGtAdLk-Etq0XLjTSd3rTVKbUbHLZJgcHpQ9XkKN"),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-
-            /// TEXT SECTION
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-              child: Column(
-                children: const [
-
-                  Text(
-                    "Millions of tons\n go to waste.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
-                  ),
-
-                  SizedBox(height: 16),
-
-                  Text(
-                    "Give your unused clothes a second life. Join the circular fashion movement.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        fontFamily: 'Plus Jakarta Sans',
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 12),
 
-            /// DOT INDICATOR
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  height: 6,
-                  width: 30,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xff8CE4FF),
-                        Color(0xff44CCFF),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                dot(),
-                const SizedBox(width: 6),
-                dot(),
-              ],
+            // Page View
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemCount: slides.length,
+                itemBuilder: (context, index) {
+                  return OnboardingSlideWidget(slide: slides[index]);
+                },
+              ),
             ),
 
-            const Spacer(),
-
-            /// BUTTONS
+            // Dot Indicator
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  slides.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentIndex == index ? 28 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _currentIndex == index
+                          ? const Color(0xff8CE4FF)
+                          : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Navigation Buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
                 children: [
-
-                  /// GET STARTED
-                  Container(
-                    width: double.infinity,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xff8CE4FF),
-                          Color(0xff44CCFF),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xff8CE4FF).withOpacity(0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        )
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Get Started",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                  if (_currentIndex > 0) ...[
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _goToPreviousSlide,
+                        child: Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              width: 1.5,
                             ),
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.white,
                           ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, color: Colors.black)
-                        ],
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.arrow_back_rounded,
+                                color: Color(0xff8CE4FF),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Back',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xff8CE4FF),
+                                  fontFamily: 'Plus Jakarta Sans',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  /// SIGN IN
-                  Container(
-                    width: double.infinity,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black54,
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _goToNextSlide,
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xff8CE4FF),
+                              Color(0xff44CCFF),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xff8CE4FF).withValues(alpha: 0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _currentIndex == slides.length - 1
+                                  ? 'Get Started'
+                                  : 'Next',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                fontFamily: 'Plus Jakarta Sans',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  const Text.rich(
-                    TextSpan(
-                      text: "New here? ",
-                      style: TextStyle(color: Colors.grey),
-                      children: [
-                        TextSpan(
-                          text: "Create an account",
-                          style: TextStyle(
-                            color: Color(0xff44CCFF),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
                 ],
               ),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -236,13 +279,97 @@ class OnboardingPage extends StatelessWidget {
   }
 }
 
-Widget dot() {
-  return Container(
-    height: 6,
-    width: 6,
-    decoration: BoxDecoration(
-      color: Colors.grey.shade300,
-      borderRadius: BorderRadius.circular(10),
-    ),
-  );
+class OnboardingSlide {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color lightColor;
+
+  OnboardingSlide({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.backgroundColor,
+    required this.lightColor,
+  });
+}
+
+class OnboardingSlideWidget extends StatelessWidget {
+  final OnboardingSlide slide;
+
+  const OnboardingSlideWidget({
+    super.key,
+    required this.slide,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Icon Circle
+        Expanded(
+          flex: 2,
+          child: Center(
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    slide.lightColor,
+                    slide.lightColor.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(80),
+              ),
+              child: Icon(
+                slide.icon,
+                size: 80,
+                color: slide.backgroundColor,
+              ),
+            ),
+          ),
+        ),
+
+        // Text Section
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  slide.title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                    color: Colors.black87,
+                    fontFamily: 'Plus Jakarta Sans',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  slide.description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey.shade600,
+                    height: 1.6,
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

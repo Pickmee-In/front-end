@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'notifications_page.dart';
 
 class Item {
   final String id;
@@ -37,6 +38,22 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
   double _rotationAngle = 0;
   bool _isAnimatingExit = false;
   bool _exitLiked = false;
+  String _sortBy = 'Closest';
+  int notifications = 3;
+  String? _selectedCategory;
+  String? _selectedPriceFilter; // 'free', 'paid', 'all'
+
+  final List<String> categories = [
+    'All',
+    'Jacket',
+    'Shirt',
+    'Sweater',
+    'Dress',
+    'Pants',
+    'Skirt',
+    'Shoes',
+    'Accessories',
+  ];
 
   final List<Item> items = [
     Item(
@@ -131,6 +148,294 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
     });
   }
 
+  void _showFilterMenu() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: 'Barrier',
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return const SizedBox();
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(-1, 0),
+              end: Offset.zero,
+            ).animate(anim1),
+            child: StatefulBuilder(
+              builder: (context, setModalState) {
+                return Container(
+                  width: 300,
+                  height: double.infinity,
+                  color: Colors.white,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Saring & Urutkan',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black,
+                                  fontFamily: 'Plus Jakarta Sans',
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(Icons.close, size: 24),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Sort By Section
+                          const Text(
+                            'Urutkan Berdasarkan',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                              fontFamily: 'Plus Jakarta Sans',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Column(
+                            children: [
+                              _buildSortOption('Closest', 'Terdekat dari saya', setModalState),
+                              _buildSortOption('Newest', 'Terbaru dulu', setModalState),
+                              _buildSortOption('Price: Low to High', 'Harga terendah', setModalState),
+                              _buildSortOption('Price: High to Low', 'Harga tertinggi', setModalState),
+                              _buildSortOption('Condition', 'Kondisi terbaik', setModalState),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Category Section
+                          const Text(
+                            'Kategori Barang',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                              fontFamily: 'Plus Jakarta Sans',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: categories.map((category) {
+                              final isSelected = _selectedCategory == category;
+                              return GestureDetector(
+                                onTap: () {
+                                  setModalState(() {
+                                    _selectedCategory = isSelected ? null : category;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xff8CE4FF)
+                                        : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xff8CE4FF)
+                                          : Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    category,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected ? Colors.white : Colors.black87,
+                                      fontFamily: 'Plus Jakarta Sans',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Price Filter Section
+                          const Text(
+                            'Tipe Barang',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                              fontFamily: 'Plus Jakarta Sans',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Column(
+                            children: [
+                              _buildPriceOption('Gratis', 'free', setModalState),
+                              const SizedBox(height: 8),
+                              _buildPriceOption('Berbayar', 'paid', setModalState),
+                              const SizedBox(height: 8),
+                              _buildPriceOption('Semua', 'all', setModalState),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Apply Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xff8CE4FF),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {});
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Filter diterapkan • ${_selectedCategory ?? 'Semua'} • ${_selectedPriceFilter == 'free' ? 'Gratis' : _selectedPriceFilter == 'paid' ? 'Berbayar' : 'Semua'}',
+                                    ),
+                                    duration: const Duration(milliseconds: 1500),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Terapkan',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Plus Jakarta Sans',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(String value, String label, setModalState) {
+    final isSelected = _sortBy == value;
+    return GestureDetector(
+      onTap: () {
+        setModalState(() {
+          _sortBy = value;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xff8CE4FF).withValues(alpha: 0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xff8CE4FF)
+                : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? const Color(0xff8CE4FF) : Colors.black87,
+                    fontFamily: 'Plus Jakarta Sans',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                    fontFamily: 'Plus Jakarta Sans',
+                  ),
+                ),
+              ],
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xff8CE4FF),
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceOption(String label, String value, setModalState) {
+    final isSelected = _selectedPriceFilter == value;
+    return GestureDetector(
+      onTap: () {
+        setModalState(() {
+          _selectedPriceFilter = isSelected ? null : value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xff8CE4FF) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xff8CE4FF)
+                : Colors.grey.shade300,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: isSelected ? Colors.white : Colors.black87,
+              fontFamily: 'Plus Jakarta Sans',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,7 +445,7 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
+          onPressed: _showFilterMenu,
         ),
         title: const Text(
           'PickMe',
@@ -152,9 +457,97 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
-            onPressed: () {},
+          // Sort By Button
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              setState(() {
+                _sortBy = value;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Sorted by: $value'),
+                  duration: const Duration(milliseconds: 1500),
+                ),
+              );
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem(
+                value: 'Closest',
+                child: Text('Closest to me'),
+              ),
+              const PopupMenuItem(
+                value: 'Newest',
+                child: Text('Newest first'),
+              ),
+              const PopupMenuItem(
+                value: 'Price: Low to High',
+                child: Text('Price: Low to High'),
+              ),
+              const PopupMenuItem(
+                value: 'Price: High to Low',
+                child: Text('Price: High to Low'),
+              ),
+              const PopupMenuItem(
+                value: 'Condition',
+                child: Text('Best Condition'),
+              ),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Center(
+                child: Text(
+                  _sortBy,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Notification Button
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none, color: Colors.black),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsPage(),
+                    ),
+                  ).then((_) {
+                    setState(() {
+                      notifications = 0;
+                    });
+                  });
+                },
+              ),
+              if (notifications > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xff8CE4FF),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Center(
+                      child: Text(
+                        notifications.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -454,15 +847,15 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade400,
+                                  color: const Color(0xff8CE4FF),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: Colors.red.shade600,
+                                    color: const Color(0xff5BC4FF),
                                     width: 3,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.red.shade400
+                                      color: const Color(0xff8CE4FF)
                                           .withValues(alpha: 0.8),
                                       blurRadius: 20,
                                       spreadRadius: 4,
