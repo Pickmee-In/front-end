@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+
+import '../features/explore/services/explore_api_service.dart';
+import '../features/notifications/services/notification_service.dart';
 import 'notifications_page.dart';
 
 class Item {
@@ -55,48 +59,13 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
     'Accessories',
   ];
 
-  final List<Item> items = [
-    Item(
-      id: '1',
-      name: 'Vintage Denim Jacket',
-      category: 'JACKET',
-      condition: 'Excellent Condition',
-      distance: '1.2 km away',
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy',
-      isNewDrop: true,
-    ),
-    Item(
-      id: '2',
-      name: 'Sustainable Linen Shirt',
-      category: 'SHIRT',
-      condition: 'Like New',
-      distance: '2.5 km away',
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy',
-      isNewDrop: false,
-    ),
-    Item(
-      id: '3',
-      name: 'Eco-Friendly Sweater',
-      category: 'SWEATER',
-      condition: 'Good Condition',
-      distance: '0.8 km away',
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy',
-      isNewDrop: true,
-    ),
-    Item(
-      id: '4',
-      name: 'Vintage Floral Dress',
-      category: 'DRESS',
-      condition: 'Excellent Condition',
-      distance: '3.2 km away',
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC-JLK9Sz-7QDox4jch9MXZmorxd3R0G5C8gtszDyUNABsX-mfmpoEkyOm5dnqSKdDNO4yZkHFN0Kex35IQyZgqteXFbTCcsSQhElsbzut_ZJD8lK8usJXQo6goLRnZUxdl2D5Z8iHegd2T2T2MBU9695mVL_N3a7hP1gHNBAHum1qOGylmhxBewuHx1KDvtQc9DljDwhXufLLPqoDqZ6-xbkLMBsf8n8_toLot0KmT_5uvo-whFg96mKR5pjx78BjgvmfOaNNNM4Gy',
-      isNewDrop: false,
-    ),
-  ];
+  final ExploreApiService _exploreApiService = const ExploreApiService();
+  final NotificationService _notificationService = const NotificationService();
+  List<Item> items = [];
+  bool _isLoadingItems = true;
+  String? _errorMessage;
+  double? _userLatitude;
+  double? _userLongitude;
 
   @override
   void initState() {
@@ -109,6 +78,9 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
+
+    _bootstrapExplore();
+    _loadNotificationCount();
   }
 
   @override
@@ -118,7 +90,132 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
     super.dispose();
   }
 
+  Future<void> _bootstrapExplore() async {
+    await _requestLocationIfNeeded();
+    await _loadItems();
+  }
+
+  Future<void> _loadNotificationCount() async {
+    try {
+      final result = await _notificationService.listNotifications();
+      if (!mounted) return;
+      setState(() {
+        notifications = result.unreadCount;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _requestLocationIfNeeded() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      _userLatitude = position.latitude;
+      _userLongitude = position.longitude;
+    } catch (_) {
+      // keep optional; filtering/sorting still works without coordinates
+    }
+  }
+
+  String _mapSortByForBackend(String sortBy) {
+    switch (sortBy) {
+      case 'Closest':
+        return 'closest';
+      case 'Newest':
+        return 'newest';
+      case 'Price: Low to High':
+        return 'price_asc';
+      case 'Price: High to Low':
+        return 'price_desc';
+      case 'Condition':
+        return 'condition';
+      default:
+        return 'newest';
+    }
+  }
+
+  Future<void> _loadItems() async {
+    setState(() {
+      _isLoadingItems = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (_sortBy == 'Closest' &&
+          (_userLatitude == null || _userLongitude == null)) {
+        await _requestLocationIfNeeded();
+      }
+
+      final response = await _exploreApiService.getItems(
+        category: (_selectedCategory == null || _selectedCategory == 'All')
+            ? null
+            : _selectedCategory,
+        priceFilter: _selectedPriceFilter,
+        sortBy: _mapSortByForBackend(_sortBy),
+        latitude: _userLatitude,
+        longitude: _userLongitude,
+        maxDistanceKm: _sortBy == 'Closest' ? 30 : null,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        items = response.items
+            .map(
+              (e) => Item(
+                id: e.id,
+                name: e.name,
+                category: e.category.toUpperCase(),
+                condition: e.condition,
+                distance: e.distance,
+                imageUrl: e.imageUrl,
+                isNewDrop: e.isNewDrop,
+              ),
+            )
+            .toList();
+        currentIndex = 0;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingItems = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitSwipe(Item item, bool isLiked) async {
+    try {
+      await _exploreApiService.swipe(
+        itemId: item.id,
+        action: isLiked ? 'pick' : 'skip',
+      );
+    } catch (_) {
+      // Keep UX smooth. The card still moves; backend retry can be added later.
+    }
+  }
+
   void _animateCardOut(bool isLiked) {
+    final currentItem = currentIndex < items.length ? items[currentIndex] : null;
+    if (currentItem != null) {
+      _submitSwipe(currentItem, isLiked);
+    }
+
     _isAnimatingExit = true;
     _exitLiked = isLiked;
     _cardExitController.forward().then((_) {
@@ -311,6 +408,7 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
                               onPressed: () {
                                 setState(() {});
                                 Navigator.pop(context);
+                                _loadItems();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
@@ -463,6 +561,7 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
               setState(() {
                 _sortBy = value;
               });
+              _loadItems();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Sorted by: $value'),
@@ -518,9 +617,7 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
                       builder: (context) => const NotificationsPage(),
                     ),
                   ).then((_) {
-                    setState(() {
-                      notifications = 0;
-                    });
+                    _loadNotificationCount();
                   });
                 },
               ),
@@ -551,9 +648,13 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
           ),
         ],
       ),
-      body: currentIndex >= items.length
-          ? _buildNoMoreItems()
-          : Stack(
+      body: _isLoadingItems
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? _buildErrorState()
+              : currentIndex >= items.length
+                  ? _buildNoMoreItems()
+                  : Stack(
               children: [
                 // Background cards effect - animated
                 if (currentIndex + 2 < items.length)
@@ -1019,6 +1120,37 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
     );
   }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 52, color: Colors.redAccent),
+            const SizedBox(height: 12),
+            const Text(
+              'Gagal memuat data explore',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage ?? 'Unknown error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadItems,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildNoMoreItems() {
     return Center(
       child: Column(
@@ -1072,11 +1204,7 @@ class _DiscoverItemsPageState extends State<DiscoverItemsPage>
               ),
               elevation: 4,
             ),
-            onPressed: () {
-              setState(() {
-                currentIndex = 0;
-              });
-            },
+            onPressed: _loadItems,
             icon: const Icon(Icons.refresh, size: 20),
             label: const Text(
               'Jelajahi Lagi',

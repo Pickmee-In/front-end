@@ -14,13 +14,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<PickMeProfilePageState> _profileKey =
+      GlobalKey<PickMeProfilePageState>();
 
-  final List<Widget> _screens = const [
-    DiscoverItemsPage(),
-    PickMeExplorePage(),
-    ChatPage(),
-    PickMeProfilePage(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const DiscoverItemsPage(),
+      const PickMeExplorePage(),
+      const ChatPage(),
+      PickMeProfilePage(key: _profileKey),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,11 +141,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: const Color(0xff8CE4FF),
         foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final created = await Navigator.push<bool>(
             context,
             MaterialPageRoute(builder: (_) => const UploadItemPage()),
           );
+          if (created == true) {
+            _profileKey.currentState?.refreshMyItems();
+          }
         },
         child: const Icon(Icons.add, size: 28),
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'features/auth/services/auth_storage.dart';
 import 'pages/onboarding_page.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -68,12 +70,23 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    Future.delayed(const Duration(milliseconds: 3200), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const OnboardingPage()),
-      );
-    });
+    _goNext();
+  }
+
+  Future<void> _goNext() async {
+    await Future.delayed(const Duration(milliseconds: 2200));
+
+    if (!mounted) return;
+
+    final isLoggedIn = await AuthStorage.isLoggedIn();
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => isLoggedIn ? const HomeScreen() : const OnboardingPage(),
+      ),
+    );
   }
 
   @override

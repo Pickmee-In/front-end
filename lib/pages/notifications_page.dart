@@ -1,26 +1,6 @@
 import 'package:flutter/material.dart';
 
-class Notification {
-  final String id;
-  final String title;
-  final String message;
-  final String type; // 'like', 'message', 'promo', 'system'
-  final String? senderAvatar;
-  final String? senderName;
-  final DateTime timestamp;
-  final bool isRead;
-
-  Notification({
-    required this.id,
-    required this.title,
-    required this.message,
-    required this.type,
-    this.senderAvatar,
-    this.senderName,
-    required this.timestamp,
-    this.isRead = false,
-  });
-}
+import '../features/notifications/services/notification_service.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -30,72 +10,47 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  List<Notification> notifications = [
-    Notification(
-      id: '1',
-      title: 'Sarah menyukai Vintage Denim Jacket',
-      message: 'Seseorang tertarik dengan barang yang kamu jual',
-      type: 'like',
-      senderName: 'Sarah',
-      senderAvatar: 'https://api.example.com/avatars/sarah.jpg',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      isRead: false,
-    ),
-    Notification(
-      id: '2',
-      title: 'Pesan dari Budi',
-      message: 'Halo, apakah barang ini masih tersedia?',
-      type: 'message',
-      senderName: 'Budi',
-      senderAvatar: 'https://api.example.com/avatars/budi.jpg',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 23)),
-      isRead: false,
-    ),
-    Notification(
-      id: '3',
-      title: 'Diskon 30% untuk barang pilihan',
-      message: 'Dapatkan penawaran spesial hari ini juga!',
-      type: 'promo',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      isRead: true,
-    ),
-    Notification(
-      id: '4',
-      title: 'Rina menyukai Eco-Friendly Sweater',
-      message: 'Seseorang tertarik dengan barang yang kamu jual',
-      type: 'like',
-      senderName: 'Rina',
-      senderAvatar: 'https://api.example.com/avatars/rina.jpg',
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      isRead: true,
-    ),
-    Notification(
-      id: '5',
-      title: 'Profile diperbarui',
-      message: 'Verifikasi akun kamu untuk kepercayaan lebih',
-      type: 'system',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    Notification(
-      id: '6',
-      title: 'Ahmad melakukan pembelian',
-      message: 'Pesanan untuk Sustainable Linen Shirt dikonfirmasi',
-      type: 'message',
-      senderName: 'Ahmad',
-      senderAvatar: 'https://api.example.com/avatars/ahmad.jpg',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    Notification(
-      id: '7',
-      title: 'Promo flash sale berakhir',
-      message: 'Jangan lewatkan kesempatan emas ini!',
-      type: 'promo',
-      timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      isRead: true,
-    ),
-  ];
+  final NotificationService _notificationService = const NotificationService();
+  bool _isLoading = true;
+  List<AppNotification> _notifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final result = await _notificationService.listNotifications();
+      if (!mounted) return;
+      setState(() {
+        _notifications = result.notifications;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _markAllRead() async {
+    await _notificationService.markAllRead();
+    if (!mounted) return;
+    setState(() {
+      _notifications = _notifications
+          .map((n) => AppNotification(
+                id: n.id,
+                title: n.title,
+                message: n.message,
+                type: n.type,
+                timestamp: n.timestamp,
+                isRead: true,
+                data: n.data,
+              ))
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +61,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
           'Notifikasi',
@@ -118,27 +73,45 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: _notifications.every((e) => e.isRead) ? null : _markAllRead,
+            child: const Text('Read all'),
+          ),
+        ],
       ),
-      body: ListView.builder(
-        itemCount: notifications.length,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemBuilder: (context, index) {
-          final notif = notifications[index];
-          return _buildNotificationItem(notif);
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _notifications.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Belum ada notifikasi.',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView.builder(
+                    itemCount: _notifications.length,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemBuilder: (context, index) {
+                      final notif = _notifications[index];
+                      return _buildNotificationItem(notif);
+                    },
+                  ),
+                ),
     );
   }
 
-  Widget _buildNotificationItem(Notification notif) {
+  Widget _buildNotificationItem(AppNotification notif) {
     IconData getIcon() {
       switch (notif.type) {
-        case 'like':
-          return Icons.favorite_rounded;
-        case 'message':
+        case 'item':
+          return Icons.checkroom_rounded;
+        case 'chat':
           return Icons.chat_bubble_rounded;
-        case 'promo':
-          return Icons.local_offer_rounded;
+        case 'match':
+          return Icons.favorite_rounded;
         case 'system':
           return Icons.info_rounded;
         default:
@@ -148,12 +121,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     Color getIconColor() {
       switch (notif.type) {
-        case 'like':
-          return Colors.red;
-        case 'message':
+        case 'item':
           return const Color(0xff8CE4FF);
-        case 'promo':
-          return Colors.amber;
+        case 'chat':
+          return Colors.green;
+        case 'match':
+          return Colors.red;
         case 'system':
           return Colors.grey;
         default:
@@ -163,27 +136,36 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     String getTimeAgo(DateTime dateTime) {
       final duration = DateTime.now().difference(dateTime);
-
-      if (duration.inMinutes < 1) {
-        return 'baru saja';
-      } else if (duration.inMinutes < 60) {
-        return '${duration.inMinutes}m yang lalu';
-      } else if (duration.inHours < 24) {
-        return '${duration.inHours}j yang lalu';
-      } else if (duration.inDays < 7) {
-        return '${duration.inDays}h yang lalu';
-      } else {
-        return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-      }
+      if (duration.inMinutes < 1) return 'baru saja';
+      if (duration.inMinutes < 60) return '${duration.inMinutes}m yang lalu';
+      if (duration.inHours < 24) return '${duration.inHours}j yang lalu';
+      if (duration.inDays < 7) return '${duration.inDays}h yang lalu';
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        if (!notif.isRead) {
+          await _notificationService.markRead(notif.id);
+          if (!mounted) return;
+          setState(() {
+            _notifications = _notifications
+                .map((n) => n.id == notif.id
+                    ? AppNotification(
+                        id: n.id,
+                        title: n.title,
+                        message: n.message,
+                        type: n.type,
+                        timestamp: n.timestamp,
+                        isRead: true,
+                        data: n.data,
+                      )
+                    : n)
+                .toList();
+          });
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(notif.title),
-            duration: const Duration(milliseconds: 1200),
-          ),
+          SnackBar(content: Text(notif.title), duration: const Duration(milliseconds: 1200)),
         );
       },
       child: Container(
@@ -199,7 +181,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon/Avatar
             Container(
               width: 48,
               height: 48,
@@ -207,17 +188,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 color: getIconColor().withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(
-                child: Icon(
-                  getIcon(),
-                  color: getIconColor(),
-                  size: 24,
-                ),
-              ),
+              child: Center(child: Icon(getIcon(), color: getIconColor(), size: 24)),
             ),
             const SizedBox(width: 12),
-
-            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +201,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       Expanded(
                         child: Text(
                           notif.title,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: Colors.black87,

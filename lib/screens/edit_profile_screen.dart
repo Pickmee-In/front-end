@@ -1,28 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../features/profile/services/profile_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final UserProfile? profile;
+
+  const EditProfileScreen({super.key, this.profile});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  final ProfileService _profileService = const ProfileService();
+  final ImagePicker _imagePicker = ImagePicker();
   late TextEditingController _nameController;
   late TextEditingController _bioController;
   late TextEditingController _locationController;
+  late TextEditingController _phoneController;
   bool _isPublic = true;
   bool _pushNotifications = false;
+  bool _isSaving = false;
+  String? _avatarUrl;
   final List<String> _interests = ["#composting", "#solar"];
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: "Alex Johnson");
+    _avatarUrl = widget.profile?.avatar;
+    _nameController = TextEditingController(text: widget.profile?.name ?? "");
     _bioController = TextEditingController(
-      text: "Passionate about urban gardening and sustainable living in the heart of the city.",
+      text: widget.profile?.bio ?? "",
     );
-    _locationController = TextEditingController(text: "Brooklyn, NY");
+    _locationController = TextEditingController(
+      text: widget.profile?.locationLabel ?? "",
+    );
+    _phoneController = TextEditingController(text: widget.profile?.phone ?? '');
   }
 
   @override
@@ -30,7 +44,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.dispose();
     _bioController.dispose();
     _locationController.dispose();
+    _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAvatar() async {
+    final file = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+    );
+    if (file == null) return;
+
+    try {
+      final updated = await _profileService.updateAvatar(file);
+      if (!mounted) return;
+      setState(() => _avatarUrl = updated.avatar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Avatar updated')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Avatar update failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() => _isSaving = true);
+    try {
+      await _profileService.updateProfile(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        bio: _bioController.text.trim(),
+        locationLabel: _locationController.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: $e')),
+      );
+    }
   }
 
   final List<String> topTags = [
@@ -340,9 +397,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         height: 120,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(60),
-                          image: const DecorationImage(
+                          image: DecorationImage(
                             image: NetworkImage(
-                              "https://lh3.googleusercontent.com/aida-public/AB6AXuBM_SS8n4xvnz3KRRwb5JdPoCrpxb5_Om_W-d-L0P9jIG7Ou5Oqbx9ukXsylF-RAKf1yoV-rcVKu-TJkH3QVo57vPUmNLdacWmHVmJRHdQjz1ppF8_VFWy3FbcMCacJC-oBxIDrVFQpUyiqslb2ygMn4uuiXFpULRoj8tL6bFgXRO_OafImCe8J5aizZIanBuq876FUM-Awg7YxiNB1RNIgKJ-a7em0GxGwPfoWs_MQU8ctz9oR8-SwaHcDdJbicQ1LBfVjQDC5Tvhi",
+                              (_avatarUrl?.isNotEmpty == true)
+                                  ? _avatarUrl!
+                                  : "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
                             ),
                             fit: BoxFit.cover,
                           ),
@@ -352,16 +411,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xff8CE4FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 18,
-                            color: Colors.white,
+                        child: GestureDetector(
+                          onTap: _pickAvatar,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xff8CE4FF),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 18,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       )
@@ -389,6 +451,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: 6),
                       TextField(
                         controller: _nameController,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        "Phone",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
@@ -677,13 +767,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('✅ Changes saved successfully!'),
-                              ),
-                            );
-                          },
+                          onPressed: _isSaving ? null : _saveProfile,
                         ),
                       ),
 

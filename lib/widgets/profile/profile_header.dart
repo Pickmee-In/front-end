@@ -6,6 +6,7 @@ class ProfileHeader extends StatelessWidget {
   final String name;
   final String badge;
   final String bio;
+  final String? locationLabel;
 
   const ProfileHeader({
     super.key,
@@ -15,6 +16,7 @@ class ProfileHeader extends StatelessWidget {
     this.name = "Alex Rivera",
     this.badge = "ECO HERO",
     this.bio = "Saving the planet one swap at a time 🌿",
+    this.locationLabel,
   });
 
   @override
@@ -33,6 +35,7 @@ class ProfileHeader extends StatelessWidget {
                   image: DecorationImage(
                     image: NetworkImage(avatarUrl),
                     fit: BoxFit.cover,
+                    onError: (exception, stackTrace) {},
                   ),
                   border: Border.all(
                     color: Colors.white,
@@ -85,6 +88,23 @@ class ProfileHeader extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Colors.black87),
             ),
           ),
+          if (locationLabel != null && locationLabel!.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.location_on_outlined, size: 14, color: Colors.black54),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    locationLabel!,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 10),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

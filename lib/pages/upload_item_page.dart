@@ -1,4 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../features/items/services/item_upload_service.dart';
 
 class UploadItemPage extends StatefulWidget {
   const UploadItemPage({super.key});
@@ -30,23 +36,191 @@ class _UploadItemPageState extends State<UploadItemPage> {
   String? selectedCategory;
   String? selectedSize;
   String? selectedCondition;
+  final titleController = TextEditingController();
   final descriptionController = TextEditingController();
   final priceController = TextEditingController();
+  final ItemUploadService _itemUploadService = const ItemUploadService();
+  final ImagePicker _imagePicker = ImagePicker();
   bool isLoading = false;
+  bool isAiAnalyzing = false;
   bool isFree = true;
-  List<String> uploadedPhotos = [];
+  List<XFile> uploadedPhotos = [];
+  String? aiDetectedCategory;
+  String? aiDetectedCondition;
+  String? aiError;
+  double? _currentLat;
+  double? _currentLng;
+
+  @override
+  void initState() {
+    super.initState();
+    _captureLocation();
+  }
+
+  Future<void> _captureLocation() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+        if (perm == LocationPermission.denied) return;
+      }
+      if (perm == LocationPermission.deniedForever) return;
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.medium),
+      );
+      if (!mounted) return;
+      setState(() {
+        _currentLat = pos.latitude;
+        _currentLng = pos.longitude;
+      });
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
+    titleController.dispose();
     descriptionController.dispose();
     priceController.dispose();
     super.dispose();
   }
 
-  void _uploadItem() {
+  Future<void> _pickFromGallery() async {
+    final picked = await _imagePicker.pickMultiImage(
+      imageQuality: 90,
+      limit: 5,
+    );
+    if (picked.isEmpty) return;
+
+    final availableSlots = 5 - uploadedPhotos.length;
+    if (availableSlots <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Maximum 5 photos allowed')),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      uploadedPhotos = [...uploadedPhotos, ...picked.take(availableSlots)];
+    });
+
+    await _analyzeFirstPhoto();
+  }
+
+  Future<void> _pickFromCamera() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 90,
+    );
+    if (picked == null) return;
+
+    if (uploadedPhotos.length >= 5) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Maximum 5 photos allowed')),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      uploadedPhotos = [...uploadedPhotos, picked];
+    });
+
+    await _analyzeFirstPhoto();
+  }
+
+  Future<void> _analyzeFirstPhoto() async {
+    if (uploadedPhotos.isEmpty) return;
+
+    setState(() {
+      isAiAnalyzing = true;
+      aiError = null;
+    });
+
+    try {
+      final result = await _itemUploadService.analyzePhoto(uploadedPhotos.first);
+      if (!mounted) return;
+
+      setState(() {
+        isAiAnalyzing = false;
+        if (result.success) {
+          aiDetectedCategory = result.category;
+          aiDetectedCondition = result.condition;
+
+          final detectedCategory = _frontendCategoryFromBackend(result.category);
+          if (detectedCategory != null && selectedCategory == null) {
+            selectedCategory = detectedCategory;
+          }
+
+          final detectedCondition = _frontendConditionFromBackend(result.condition);
+          if (detectedCondition != null && selectedCondition == null) {
+            selectedCondition = detectedCondition;
+          }
+        } else {
+          aiError = result.errorMessage ??
+              'AI detection failed. Please input category/condition manually.';
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        isAiAnalyzing = false;
+        aiError =
+            'AI detection failed. Please input category/condition manually.';
+      });
+    }
+  }
+
+  String? _frontendCategoryFromBackend(String? value) {
+    if (value == null) return null;
+    final map = {
+      'jacket': 'Jacket',
+      'shirt': 'Shirt',
+      'sweater': 'Sweater',
+      'dress': 'Dress',
+      'pants': 'Pants',
+      'skirt': 'Skirt',
+      'shoes': 'Shoes',
+      'accessories': 'Accessories',
+      'other': 'Accessories',
+    };
+    return map[value.toLowerCase()];
+  }
+
+  String? _frontendConditionFromBackend(String? value) {
+    if (value == null) return null;
+    final map = {
+      'like_new': 'Like New',
+      'excellent': 'Excellent Condition',
+      'good': 'Good Condition',
+      'fair': 'Fair Condition',
+    };
+    return map[value.toLowerCase()];
+  }
+
+  Future<void> _uploadItem() async {
+    if (uploadedPhotos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload at least 1 photo')),
+      );
+      return;
+    }
+
     if (selectedCategory == null || selectedSize == null || selectedCondition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    if (titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a title')),
       );
       return;
     }
@@ -60,19 +234,36 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
     setState(() => isLoading = true);
 
-    // Simulate upload delay
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item listed successfully!'),
-            backgroundColor: Color(0xff8CE4FF),
-          ),
-        );
-        Navigator.pop(context);
-      }
-    });
+    try {
+      await _itemUploadService.createItem(
+        photos: uploadedPhotos,
+        title: titleController.text,
+        category: selectedCategory!,
+        size: selectedSize!,
+        condition: selectedCondition!,
+        isFree: isFree,
+        price: priceController.text,
+        description: descriptionController.text,
+        latitude: _currentLat,
+        longitude: _currentLng,
+      );
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item listed successfully!'),
+          backgroundColor: Color(0xff8CE4FF),
+        ),
+      );
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: $error')),
+      );
+    }
   }
 
   @override
@@ -105,6 +296,37 @@ class _UploadItemPageState extends State<UploadItemPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text(
+                    'Title',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: titleController,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Oversized denim jacket',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
+                        borderSide: BorderSide(color: Color(0xff8CE4FF), width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
                   // Photos Section
                   Center(
                     child: Text(
@@ -120,9 +342,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                   // Upload Photo Card
                   Center(
                     child: GestureDetector(
-                      onTap: () {
-                        // TODO: Implement photo picker
-                      },
+                      onTap: _pickFromGallery,
                       child: Container(
                         width: 260,
                         decoration: BoxDecoration(
@@ -175,7 +395,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                                 elevation: 0,
                               ),
                               onPressed: () {
-                                // TODO: Implement photo picker
+                                _pickFromGallery();
                               },
                               child: const Text(
                                 'Add Photo',
@@ -194,6 +414,57 @@ class _UploadItemPageState extends State<UploadItemPage> {
 
                   const SizedBox(height: 20),
 
+                  if (uploadedPhotos.isNotEmpty)
+                    SizedBox(
+                      height: 90,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: uploadedPhotos.length,
+                        separatorBuilder: (context, index) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          final photo = uploadedPhotos[index];
+                          return Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  File(photo.path),
+                                  width: 90,
+                                  height: 90,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                right: 4,
+                                top: 4,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      uploadedPhotos.removeAt(index);
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
+
                   // Photo sources
                   Center(
                     child: Row(
@@ -201,17 +472,20 @@ class _UploadItemPageState extends State<UploadItemPage> {
                       children: [
                         Column(
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: const Color(0xff8CE4FF).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_outlined,
-                                color: Color(0xff8CE4FF),
-                                size: 24,
+                            GestureDetector(
+                              onTap: _pickFromCamera,
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xff8CE4FF).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_outlined,
+                                  color: Color(0xff8CE4FF),
+                                  size: 24,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -229,17 +503,20 @@ class _UploadItemPageState extends State<UploadItemPage> {
                         const SizedBox(width: 48),
                         Column(
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: const Color(0xff8CE4FF).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.image_outlined,
-                                color: Color(0xff8CE4FF),
-                                size: 24,
+                            GestureDetector(
+                              onTap: _pickFromGallery,
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xff8CE4FF).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.image_outlined,
+                                  color: Color(0xff8CE4FF),
+                                  size: 24,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -303,9 +580,15 @@ class _UploadItemPageState extends State<UploadItemPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  'Category detected: Jacket',
-                                  style: TextStyle(
+                                Text(
+                                  isAiAnalyzing
+                                      ? 'Analyzing photo with Gemini...'
+                                      : aiError != null
+                                          ? 'AI error: $aiError'
+                                          : aiDetectedCategory != null
+                                              ? 'Category detected: ${_frontendCategoryFromBackend(aiDetectedCategory) ?? aiDetectedCategory}'
+                                              : 'Upload photo for AI detection',
+                                  style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.black87,
@@ -315,9 +598,15 @@ class _UploadItemPageState extends State<UploadItemPage> {
                               ],
                             ),
                           ),
-                          const Icon(
-                            Icons.check_circle,
-                            color: Color(0xff8CE4FF),
+                          Icon(
+                            aiError != null
+                                ? Icons.error_outline
+                                : aiDetectedCategory != null
+                                    ? Icons.check_circle
+                                    : Icons.info_outline,
+                            color: aiError != null
+                                ? Colors.orange
+                                : const Color(0xff8CE4FF),
                             size: 24,
                           ),
                         ],
@@ -345,7 +634,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: DropdownButtonFormField<String>(
-                      value: selectedCategory,
+                      initialValue: selectedCategory,
                       hint: const Text('Select category'),
                       items: categories.map((cat) {
                         return DropdownMenuItem(value: cat, child: Text(cat));
@@ -384,7 +673,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: DropdownButtonFormField<String>(
-                                value: selectedSize,
+                                initialValue: selectedSize,
                                 hint: const Text('Select size'),
                                 items: sizes.map((size) {
                                   return DropdownMenuItem(value: size, child: Text(size));
@@ -421,7 +710,7 @@ class _UploadItemPageState extends State<UploadItemPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: DropdownButtonFormField<String>(
-                                value: selectedCondition,
+                                initialValue: selectedCondition,
                                 hint: const Text('Select condition'),
                                 items: conditions.map((cond) {
                                   return DropdownMenuItem(value: cond, child: Text(cond));
