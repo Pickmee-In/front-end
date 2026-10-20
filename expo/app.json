@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "PickMe",
+    "slug": "pickme",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "pickme",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pickmein.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#8CE4FF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.pickmein.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-font",
+      "expo-splash-screen",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "PickMe needs your location to find nearby items."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PickMe needs access to your photos to upload items."
+        }
+      ]
+    ]
+  }
+}
