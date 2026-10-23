@@ -1,4 +1,3 @@
-import { Text, TextInput } from "../src/components/Typography";
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -11,15 +10,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, TextInput } from "../src/components/Typography";
+import { MaterialIcons } from "../src/components/FlutterIcon";
 import {
   ChatApi,
   ChatConversationDetail,
   ChatMessage,
 } from "../src/services/api";
-import { Colors, FontSize, Radius, Spacing } from "../src/config/theme";
-
+import { Colors } from "../src/config/theme";
 export default function ChatDetailScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const router = useRouter();
@@ -28,227 +27,231 @@ export default function ChatDetailScreen() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const flatListRef = useRef<FlatList>(null);
-
+  const [error, setError] = useState("");
+  const list = useRef<FlatList>(null);
   useEffect(() => {
-    if (!conversationId) return;
+    let active = true;
+    if (!conversationId) {
+      setLoading(false);
+      setError("Percakapan tidak ditemukan.");
+      return;
+    }
     ChatApi.getConversation(conversationId)
-      .then(setConversation)
-      .catch(console.warn)
-      .finally(() => setLoading(false));
+      .then((value) => {
+        if (active) setConversation(value);
+      })
+      .catch(() => {
+        if (active)
+          setError("Chat belum dapat dimuat. Buka kembali untuk mencoba lagi.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [conversationId]);
-
-  const sendMessage = async () => {
-    if (!input.trim() || sending || !conversationId) return;
+  const send = async () => {
     const text = input.trim();
-    setInput("");
+    if (!text || sending || !conversationId) return;
     setSending(true);
+    setError("");
     try {
-      const msg = await ChatApi.sendMessage(conversationId, text);
-      setConversation((prev) =>
-        prev ? { ...prev, messages: [...prev.messages, msg] } : prev,
+      const message = await ChatApi.sendMessage(conversationId, text);
+      setConversation((previous) =>
+        previous
+          ? { ...previous, messages: [...previous.messages, message] }
+          : previous,
       );
-      setTimeout(
-        () => flatListRef.current?.scrollToEnd({ animated: true }),
-        100,
-      );
-    } catch (e: any) {
-      setInput(text);
+      setInput("");
+    } catch {
+      setError("Pesan belum terkirim. Silakan coba lagi.");
     } finally {
       setSending(false);
     }
   };
-
   const renderMessage = ({ item }: { item: ChatMessage }) => (
     <View
       style={[
-        styles.msgRow,
-        item.isSent ? styles.msgRowSent : styles.msgRowReceived,
+        styles.bubble,
+        {
+          alignSelf: item.isSent ? "flex-end" : "flex-start",
+          backgroundColor: item.isSent ? Colors.primary : "#F5F5F5",
+          alignItems: item.isSent ? "flex-end" : "flex-start",
+        },
       ]}
     >
-      <View
+      <Text style={[styles.message, { color: item.isSent ? "white" : "#222" }]}>
+        {item.text}
+      </Text>
+      <Text
         style={[
-          styles.bubble,
-          item.isSent ? styles.bubbleSent : styles.bubbleReceived,
+          styles.timestamp,
+          { color: item.isSent ? "#FFFFFFB3" : "#9E9E9E" },
         ]}
       >
-        <Text style={[styles.bubbleText, item.isSent && styles.bubbleTextSent]}>
-          {item.text}
-        </Text>
-      </View>
-      <Text style={styles.timestamp}>{item.timestampLabel}</Text>
+        {item.timestampLabel}
+      </Text>
     </View>
   );
-
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={Colors.primary} size="large" />
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerName}>
-            {conversation?.otherUserName ?? "Chat"}
-          </Text>
-          {conversation?.itemTitle && (
-            <Text style={styles.headerSub} numberOfLines={1}>
-              re: {conversation.itemTitle}
-            </Text>
-          )}
-        </View>
-        {conversation?.itemImageUrl && (
-          <Image
-            source={{ uri: conversation.itemImageUrl }}
-            style={styles.headerItemImg}
-          />
-        )}
-      </View>
-
-      {/* Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={conversation?.messages ?? []}
-        keyExtractor={(m) => m.id}
-        renderItem={renderMessage}
-        contentContainerStyle={styles.messagesList}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        ListEmptyComponent={
-          <View style={styles.emptyMessages}>
-            <Ionicons
-              name="chatbubble-outline"
-              size={48}
-              color={Colors.border}
-            />
-            <Text style={styles.emptyText}>Start the conversation!</Text>
-          </View>
-        }
-      />
-
-      {/* Input */}
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
+        style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type a message…"
-            placeholderTextColor={Colors.textMuted}
-            value={input}
-            onChangeText={setInput}
-            multiline
-            maxLength={1000}
-          />
+        <View style={styles.header}>
           <TouchableOpacity
-            style={[
-              styles.sendBtn,
-              (!input.trim() || sending) && styles.sendBtnDisabled,
-            ]}
-            onPress={sendMessage}
-            disabled={!input.trim() || sending}
+            accessibilityLabel="Back"
+            style={styles.back}
+            onPress={() => router.back()}
           >
-            {sending ? (
-              <ActivityIndicator color={Colors.white} size="small" />
-            ) : (
-              <Ionicons name="send" size={18} color={Colors.white} />
-            )}
+            <MaterialIcons name="arrow-back" size={24} color="#222" />
           </TouchableOpacity>
+          <View style={styles.heading}>
+            <Text style={styles.name}>
+              {conversation?.otherUserName ?? "Chat"}
+            </Text>
+            {!!conversation?.itemTitle && (
+              <Text style={styles.subtitle} numberOfLines={1}>
+                {conversation.itemTitle}
+              </Text>
+            )}
+          </View>
+          <View style={styles.back} />
         </View>
+        {loading ? (
+          <ActivityIndicator style={{ flex: 1 }} color={Colors.primary} />
+        ) : (
+          <>
+            {!!conversation?.itemImageUrl && (
+              <View style={styles.item}>
+                <Image
+                  source={{ uri: conversation.itemImageUrl }}
+                  style={styles.itemPhoto}
+                />
+                <Text style={styles.itemTitle}>
+                  {conversation.itemTitle || "Item chat"}
+                </Text>
+              </View>
+            )}
+            <FlatList
+              ref={list}
+              data={conversation?.messages ?? []}
+              renderItem={renderMessage}
+              keyExtractor={(message) => message.id}
+              contentContainerStyle={styles.messages}
+              onContentSizeChange={() =>
+                list.current?.scrollToEnd({ animated: true })
+              }
+            />
+            {!!error && (
+              <Text accessibilityRole="alert" style={styles.error}>
+                {error}
+              </Text>
+            )}
+            <View style={styles.composer}>
+              <TextInput
+                accessibilityLabel="Message"
+                style={styles.input}
+                value={input}
+                onChangeText={setInput}
+                placeholder="Ketik pesan..."
+                placeholderTextColor="#9E9E9E"
+                maxLength={1000}
+                onSubmitEditing={send}
+                editable={!sending}
+              />
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
+                style={styles.send}
+                disabled={sending || !conversation}
+                onPress={send}
+              >
+                {sending ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <MaterialIcons name="send" size={20} color="white" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
+  screen: { flex: 1, backgroundColor: "white" },
+  header: { height: 56, flexDirection: "row", alignItems: "center" },
+  back: {
+    width: 56,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heading: { flex: 1, alignItems: "center" },
+  name: { fontSize: 15, fontWeight: "700", color: "#222" },
+  subtitle: { fontSize: 11, fontWeight: "600", color: "#9E9E9E" },
+  item: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-    gap: Spacing.md,
+    gap: 10,
+    padding: 10,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 14,
+    backgroundColor: "#FAFAFA",
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerInfo: { flex: 1 },
-  headerName: {
-    fontSize: FontSize.base,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  headerSub: { fontSize: FontSize.xs, color: Colors.textMuted },
-  headerItemImg: { width: 36, height: 36, borderRadius: Radius.sm },
-  messagesList: { padding: Spacing.lg, gap: Spacing.sm },
-  msgRow: { marginBottom: Spacing.sm },
-  msgRowSent: { alignItems: "flex-end" },
-  msgRowReceived: { alignItems: "flex-start" },
+  itemPhoto: { width: 52, height: 52, borderRadius: 10 },
+  itemTitle: { flex: 1, fontSize: 14, fontWeight: "700" },
+  messages: { paddingHorizontal: 16, paddingVertical: 12 },
   bubble: {
-    maxWidth: "75%",
-    borderRadius: Radius.xl,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    maxWidth: "92%",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginBottom: 8,
   },
-  bubbleSent: { backgroundColor: Colors.primary, borderBottomRightRadius: 4 },
-  bubbleReceived: {
-    backgroundColor: Colors.surface,
-    borderBottomLeftRadius: 4,
-  },
-  bubbleText: { fontSize: FontSize.base, color: Colors.text, lineHeight: 20 },
-  bubbleTextSent: { color: Colors.white },
-  timestamp: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 3 },
-  emptyMessages: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.md,
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: FontSize.base,
-    color: Colors.textMuted,
-    fontWeight: "600",
-  },
-  inputRow: {
+  message: { fontSize: 13 },
+  timestamp: { fontSize: 10, marginTop: 4 },
+  composer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    gap: Spacing.sm,
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 2,
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    fontSize: FontSize.base,
-    color: Colors.text,
-    maxHeight: 120,
+    minWidth: 0,
+    height: 48,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
   },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  send: {
+    width: 40,
+    height: 40,
     backgroundColor: Colors.primary,
-    justifyContent: "center",
+    borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
   },
-  sendBtnDisabled: { opacity: 0.5 },
+  error: {
+    color: Colors.error,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    fontSize: 12,
+  },
 });

@@ -2,23 +2,19 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthStorage } from "../src/services/authStorage";
-import {
-  useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from "@expo-google-fonts/plus-jakarta-sans";
+import { LaunchScreen } from "../src/components/LaunchScreen";
+import { useFonts } from "expo-font";
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    JakartaRegular: PlusJakartaSans_400Regular,
-    JakartaMedium: PlusJakartaSans_500Medium,
-    JakartaSemiBold: PlusJakartaSans_600SemiBold,
-    JakartaBold: PlusJakartaSans_700Bold,
-    JakartaExtraBold: PlusJakartaSans_800ExtraBold,
+    PickMeRoboto: require("../assets/fonts/Roboto-Flutter.ttf"),
+    FlutterMaterialIcons: require("../assets/fonts/MaterialIcons-Regular.otf"),
   });
+  const [launchVisible, setLaunchVisible] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setLaunchVisible(false), 2200);
+    return () => clearTimeout(timer);
+  }, []);
   const [isReady, setIsReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
@@ -38,7 +34,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!isReady || (!fontsLoaded && !fontError)) return;
+    if (!isReady || (!fontsLoaded && !fontError) || launchVisible) return;
 
     const inAuthGroup = segments[0] === "(auth)";
     const inTabsGroup = segments[0] === "(tabs)";
@@ -48,9 +44,10 @@ export default function RootLayout() {
     } else if (isLoggedIn && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [isReady, isLoggedIn, segments, fontsLoaded, fontError]);
+  }, [isReady, isLoggedIn, segments, fontsLoaded, fontError, launchVisible]);
 
-  if (!isReady || (!fontsLoaded && !fontError)) return null;
+  if (!isReady || (!fontsLoaded && !fontError) || launchVisible)
+    return <LaunchScreen />;
 
   return (
     <>

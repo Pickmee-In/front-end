@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "./FlutterIcon";
 import { Text } from "./Typography";
 import { Colors } from "../config/theme";
 export function SelectField({
@@ -34,7 +34,7 @@ export function SelectField({
         style={styles.select}
       >
         <Text
-          style={[styles.value, !value && { color: "#9E9E9E" }]}
+          style={[styles.value, !value && { color: "#757575" }]}
           numberOfLines={1}
         >
           {value || placeholder}
@@ -81,17 +81,18 @@ const styles = StyleSheet.create({
   field: { flex: 1 },
   label: { fontSize: 13, fontWeight: "700", color: "#222", marginBottom: 8 },
   select: {
-    minHeight: 52,
+    minHeight: 50,
     borderWidth: 1,
     borderColor: "#E0E0E0",
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    paddingRight: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     backgroundColor: "white",
   },
-  value: { fontSize: 13, color: "#222", flex: 1 },
+  value: { fontSize: 16, color: "#222", flex: 1 },
   scrim: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.3)",

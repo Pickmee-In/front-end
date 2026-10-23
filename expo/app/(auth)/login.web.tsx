@@ -7,8 +7,9 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { AppConfig } from "../../src/config/app";
 import { Colors } from "../../src/config/theme";
 import { AuthApi } from "../../src/services/api";
@@ -117,9 +118,14 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.logo}>
-          <MaterialIcons name="eco" size={64} color={Colors.primary} />
-        </View>
+        <LinearGradient
+          colors={["#EEFBFF", "#F9FEFF"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.logo}
+        >
+          <MaterialIcons name="eco-rounded" size={64} color={Colors.primary} />
+        </LinearGradient>
         <Text style={styles.title}>Welcome to PickMe</Text>
         <Text style={styles.description}>
           Masuk menggunakan akun Google untuk mulai swipe, swap, dan donasi
@@ -176,7 +182,7 @@ const styles = StyleSheet.create({
     marginBottom: 36,
   },
   title: { fontSize: 28, fontWeight: "800", color: Colors.text },
-  description: { fontSize: 14, lineHeight: 22, color: "#757575", marginTop: 8 },
+  description: { fontSize: 14, lineHeight: 20, color: "#757575", marginTop: 8 },
   spacer: { flex: 1, minHeight: 40 },
   error: {
     color: Colors.error,

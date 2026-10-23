@@ -13,7 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -151,7 +151,11 @@ export default function ProfileScreen() {
             </Text>
             {!!profile?.locationLabel && (
               <View style={styles.location}>
-                <MaterialIcons name="location-on" color="#666" size={14} />
+                <MaterialIcons
+                  name="location-on-outlined"
+                  color="#666"
+                  size={14}
+                />
                 <Text style={styles.locationText}>{profile.locationLabel}</Text>
               </View>
             )}
@@ -324,8 +328,8 @@ const styles = StyleSheet.create({
   },
   title: { flex: 1, fontSize: 22, fontWeight: "700", color: "black" },
   iconButton: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -370,7 +374,8 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 24,
     paddingHorizontal: 30,
-    paddingVertical: 10,
+    height: 32,
+    justifyContent: "center",
     elevation: 2,
     shadowOpacity: 0.08,
     shadowRadius: 3,

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import type * as Leaflet from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "./map.css";
 import { MapCanvasProps, markerColor } from "./MapCanvas.types";
 
 export default function MapCanvas({
@@ -82,24 +83,34 @@ export default function MapCanvas({
       const color = markerColor(item.listingType);
       const content = document.createElement("div");
       content.style.cssText = `width:${size}px;height:${size}px;border:${selected ? 3 : 2}px solid ${color};border-radius:50%;background:#f0f8fa;box-shadow:0 0 10px ${color}70;overflow:hidden;box-sizing:border-box`;
+      if (selected) content.className = "pickme-selected-marker";
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText =
+        "display:flex;flex-direction:column;align-items:center";
+      const dot = document.createElement("div");
+      dot.style.cssText = `width:6px;height:6px;border-radius:50%;background:${color}`;
       const photo = document.createElement("img");
       photo.src = item.imageUrl;
       photo.alt = item.title;
       photo.style.cssText = "width:100%;height:100%;object-fit:cover";
       photo.onerror = () => {
         photo.remove();
-        content.textContent = "♧";
+        content.textContent = String.fromCodePoint(0xe15d);
+        content.style.fontFamily = "FlutterMaterialIcons";
+        content.style.fontSize = `${size * 0.45}px`;
+        content.style.color = color;
         content.style.textAlign = "center";
         content.style.lineHeight = `${size - 6}px`;
       };
       content.appendChild(photo);
+      wrapper.append(content, dot);
       L.marker([item.latitude, item.longitude], {
         title: item.title,
         icon: L.divIcon({
-          html: content,
+          html: wrapper,
           className: "",
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
+          iconSize: [size, size + 6],
+          iconAnchor: [size / 2, (size + 6) / 2],
         }),
         zIndexOffset: selected ? 100 : 0,
       })

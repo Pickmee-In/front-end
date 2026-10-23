@@ -8,16 +8,16 @@ export const Colors = {
   accentLight: "#F3FCFF",
 
   background: "#FFFFFF",
-  surface: "#F8FAFC",
+  surface: "#FAFAFA",
   card: "#FFFFFF",
 
-  text: "#0F172A",
-  textSecondary: "#475569",
+  text: "#222222",
+  textSecondary: "#757575",
   textMuted: "#9E9E9E",
   textPlaceholder: "#9CA3AF",
 
-  border: "#E2E8F0",
-  borderLight: "#F1F5F9",
+  border: "#E0E0E0",
+  borderLight: "#EEEEEE",
 
   success: "#22C55E",
   warning: "#F59E0B",

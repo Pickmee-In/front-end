@@ -53,6 +53,7 @@ export interface AuthUser {
   name: string;
   avatar: string | null;
   isProfileComplete: boolean;
+  preferences?: Record<string, unknown> & { interests?: string[] };
 }
 
 export interface AuthSession {
@@ -61,6 +62,7 @@ export interface AuthSession {
   expiresIn: number;
   isNewUser: boolean;
   isProfileComplete: boolean;
+  preferences?: Record<string, unknown> & { interests?: string[] };
   user: AuthUser;
 }
 
@@ -436,6 +438,7 @@ export interface UserProfile {
   bio: string | null;
   locationLabel: string | null;
   isProfileComplete: boolean;
+  preferences?: Record<string, unknown> & { interests?: string[] };
 }
 
 export interface ProfileStats {
@@ -466,6 +469,7 @@ export const ProfileApi = {
     phone?: string;
     bio?: string;
     locationLabel?: string;
+    preferences?: Record<string, unknown>;
   }): Promise<UserProfile> {
     const res = await safeFetch(`${AppConfig.apiBaseUrl}/api/users/me`, {
       method: "PATCH",

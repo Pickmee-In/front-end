@@ -1,7 +1,7 @@
 import React from "react";
 import { Tabs, useRouter } from "expo-router";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 type BottomTabBarProps = Parameters<
   NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>
@@ -10,10 +10,10 @@ import { Text } from "../../src/components/Typography";
 import { Colors } from "../../src/config/theme";
 
 const tabs = [
-  { route: "index", label: "Home", icon: "home" },
-  { route: "explore", label: "Explore", icon: "map" },
-  { route: "chat", label: "Chat", icon: "chat-bubble" },
-  { route: "profile", label: "Profile", icon: "person" },
+  { route: "index", label: "Home", icon: "home-rounded" },
+  { route: "explore", label: "Explore", icon: "map-rounded" },
+  { route: "chat", label: "Chat", icon: "chat-bubble-rounded" },
+  { route: "profile", label: "Profile", icon: "person-rounded" },
 ] as const;
 function BottomBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -22,7 +22,7 @@ function BottomBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
     <View
       style={[
         styles.bar,
-        { paddingBottom: insets.bottom, height: 64 + insets.bottom },
+        { paddingBottom: insets.bottom, height: 71 + insets.bottom },
       ]}
     >
       {tabs.map((tab) => {

@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "../src/components/FlutterIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ItemApi, MyItemDetail } from "../src/services/api";
 import { SelectField } from "../src/components/SelectField";
@@ -167,7 +167,7 @@ export default function EditItemScreen() {
             onPress={() => router.back()}
             style={styles.iconBtn}
           >
-            <Ionicons name="arrow-back" size={22} color={Colors.text} />
+            <MaterialIcons name="arrow-back" size={22} color={Colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>Edit Item</Text>
         </View>
@@ -205,8 +205,8 @@ export default function EditItemScreen() {
               style={styles.replacePhotoBtn}
               onPress={pickPhotos}
             >
-              <Ionicons
-                name="camera-outline"
+              <MaterialIcons
+                name="photo-library-outlined"
                 size={20}
                 color={Colors.primary}
               />

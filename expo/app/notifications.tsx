@@ -3,31 +3,33 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "../src/components/FlutterIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NotificationApi, AppNotification } from "../src/services/api";
-import { Colors, FontSize, Radius, Spacing } from "../src/config/theme";
+import { Colors, FontSize, Spacing } from "../src/config/theme";
 
-const TYPE_ICON: Record<string, { icon: string; color: string }> = {
-  match: { icon: "heart-circle", color: Colors.primary },
-  message: { icon: "chatbubble-ellipses", color: "#6366F1" },
-  system: { icon: "information-circle", color: "#F59E0B" },
-  item: { icon: "shirt", color: "#10B981" },
-};
+const TYPE_ICON = {
+  match: { icon: "favorite-rounded", color: "#F44336" },
+  chat: { icon: "chat-bubble-rounded", color: "#4CAF50" },
+  message: { icon: "chat-bubble-rounded", color: "#4CAF50" },
+  system: { icon: "info-rounded", color: "#9E9E9E" },
+  item: { icon: "checkroom-rounded", color: Colors.primary },
+} as const;
 
 function timeAgo(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return "baru saja";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m yang lalu`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}j yang lalu`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}h yang lalu`;
+  const date = new Date(iso);
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 }
 
 export default function NotificationsScreen() {
@@ -77,7 +79,8 @@ export default function NotificationsScreen() {
   };
 
   const renderItem = ({ item }: { item: AppNotification }) => {
-    const style = TYPE_ICON[item.type] ?? TYPE_ICON.system;
+    const style =
+      TYPE_ICON[item.type as keyof typeof TYPE_ICON] ?? TYPE_ICON.system;
     return (
       <TouchableOpacity
         style={[styles.notifRow, !item.isRead && styles.notifRowUnread]}
@@ -85,22 +88,22 @@ export default function NotificationsScreen() {
         activeOpacity={0.7}
       >
         <View
-          style={[styles.iconCircle, { backgroundColor: `${style.color}20` }]}
+          style={[styles.iconCircle, { backgroundColor: `${style.color}26` }]}
         >
-          <Ionicons name={style.icon as any} size={22} color={style.color} />
+          <MaterialIcons name={style.icon} size={24} color={style.color} />
         </View>
         <View style={styles.notifInfo}>
-          <Text
-            style={[styles.notifTitle, !item.isRead && styles.notifTitleUnread]}
-          >
-            {item.title}
-          </Text>
+          <View style={styles.notifHeading}>
+            <Text style={styles.notifTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            {!item.isRead && <View style={styles.unreadDot} />}
+          </View>
           <Text style={styles.notifMessage} numberOfLines={2}>
             {item.message}
           </Text>
           <Text style={styles.notifTime}>{timeAgo(item.timestamp)}</Text>
         </View>
-        {!item.isRead && <View style={styles.unreadDot} />}
       </TouchableOpacity>
     );
   };
@@ -109,11 +112,11 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text} />
+          <MaterialIcons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={styles.title}>Notifikasi</Text>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead}>
+          <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllButton}>
             <Text style={styles.markAllText}>Read all</Text>
           </TouchableOpacity>
         )}
@@ -139,7 +142,7 @@ export default function NotificationsScreen() {
             />
           }
           contentContainerStyle={
-            notifications.length === 0 ? { flex: 1 } : { paddingBottom: 24 }
+            notifications.length === 0 ? { flex: 1 } : { paddingVertical: 8 }
           }
           ListEmptyComponent={
             <View style={styles.centered}>
@@ -153,33 +156,33 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: "#FAFAFA" },
   header: {
+    height: 56,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-    gap: Spacing.md,
+    paddingRight: 12,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 56,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
-    flex: 1,
+    position: "absolute",
+    left: 72,
+    right: 72,
     textAlign: "center",
     fontSize: 18,
     fontWeight: "700",
     color: Colors.text,
   },
+  markAllButton: { marginLeft: "auto", paddingHorizontal: 0 },
   markAllText: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    fontWeight: "700",
+    fontSize: 14,
+    color: "#00758F",
+    fontWeight: "400",
   },
   centered: {
     flex: 1,
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.base,
     color: Colors.textMuted,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   notifRow: {
     flexDirection: "row",
@@ -198,29 +201,35 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 12,
     marginVertical: 6,
-    borderRadius: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#EEEEEE",
+    backgroundColor: "white",
     gap: 12,
   },
-  notifRowUnread: { backgroundColor: `${Colors.primary}08` },
+  notifRowUnread: {
+    backgroundColor: `${Colors.primary}14`,
+    borderColor: `${Colors.primary}4D`,
+  },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
   },
   notifInfo: { flex: 1 },
+  notifHeading: { flexDirection: "row", alignItems: "center" },
   notifTitle: {
-    fontSize: FontSize.base,
-    fontWeight: "600",
-    color: Colors.text,
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#222",
   },
-  notifTitleUnread: { fontWeight: "800" },
   notifMessage: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: 3,
-    lineHeight: 18,
+    color: "#757575",
+    marginTop: 4,
   },
   notifTime: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 6 },
   unreadDot: {
@@ -228,7 +237,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: Colors.primary,
-    marginTop: 6,
   },
   separator: { height: 1, backgroundColor: Colors.borderLight },
 });

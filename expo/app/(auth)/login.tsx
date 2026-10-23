@@ -8,9 +8,10 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { Colors, FontSize, Radius, Spacing } from "../../src/config/theme";
 
 export default function LoginScreen() {
@@ -42,9 +43,14 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Logo */}
-        <View style={styles.logoCircle}>
-          <Ionicons name="leaf" size={64} color={Colors.primary} />
-        </View>
+        <LinearGradient
+          colors={["#EEFBFF", "#F9FEFF"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.logoCircle}
+        >
+          <MaterialIcons name="eco-rounded" size={64} color={Colors.primary} />
+        </LinearGradient>
 
         {/* Title */}
         <Text style={styles.title}>Welcome to PickMe</Text>
@@ -66,7 +72,11 @@ export default function LoginScreen() {
           {isLoading ? (
             <ActivityIndicator color={Colors.white} size="small" />
           ) : (
-            <Ionicons name="log-in" size={22} color={Colors.white} />
+            <MaterialIcons
+              name="login-rounded"
+              size={22}
+              color={Colors.white}
+            />
           )}
           <Text style={styles.googleButtonText}>
             {isLoading ? "Signing in..." : "Continue with Google"}
@@ -113,7 +123,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     color: Colors.textSecondary,
     marginTop: Spacing.sm,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   googleButton: {
     flexDirection: "row",

@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
@@ -302,7 +302,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             accessibilityLabel="Notifications"
-            style={styles.iconButton}
+            style={[styles.iconButton, { width: 40 }]}
             onPress={() => router.push("/notifications")}
           >
             <MaterialIcons name="notifications-none" size={24} />
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#FAFAFA" },
   header: { height: 56, flexDirection: "row", alignItems: "center" },
   iconButton: {
-    width: 48,
+    width: 56,
     height: 48,
     alignItems: "center",
     justifyContent: "center",

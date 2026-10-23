@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../src/components/Typography";
@@ -17,19 +17,19 @@ const slides = [
     title: "Millions of tons\ngo to waste.",
     description:
       "Give your unused clothes a second life. Join the circular fashion movement.",
-    icon: "eco",
+    icon: "eco-rounded",
   },
   {
     title: "Buy sustainably,\nfashionably cheap.",
     description:
       "Find quality pre-loved clothes at unbeatable prices. Support sustainable fashion.",
-    icon: "shopping-bag",
+    icon: "shopping-bag-rounded",
   },
   {
     title: "Connect with\nthe community.",
     description:
       "Chat, swap, and trade with other fashion enthusiasts. Build a circular wardrobe together.",
-    icon: "people",
+    icon: "people-rounded",
   },
 ] as const;
 export default function Onboarding() {
@@ -56,7 +56,11 @@ export default function Onboarding() {
       <View style={styles.header}>
         <View style={styles.brand}>
           <View style={styles.logo}>
-            <MaterialIcons name="eco" size={20} color={Colors.primary} />
+            <MaterialIcons
+              name="eco-rounded"
+              size={20}
+              color={Colors.primary}
+            />
           </View>
           <Text style={styles.brandText}>PickMe</Text>
         </View>
@@ -125,7 +129,11 @@ export default function Onboarding() {
             style={styles.back}
             onPress={() => go(index - 1)}
           >
-            <MaterialIcons name="arrow-back" size={24} color={Colors.primary} />
+            <MaterialIcons
+              name="arrow-back-rounded"
+              size={24}
+              color={Colors.primary}
+            />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         )}
@@ -148,7 +156,11 @@ export default function Onboarding() {
             <Text style={styles.nextText}>
               {index === slides.length - 1 ? "Get Started" : "Next"}
             </Text>
-            <MaterialIcons name="arrow-forward" color="white" size={24} />
+            <MaterialIcons
+              name="arrow-forward-rounded"
+              color="white"
+              size={24}
+            />
           </LinearGradient>
         </TouchableOpacity>
       </View>

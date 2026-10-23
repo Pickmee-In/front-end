@@ -10,11 +10,12 @@ import {
   Pressable,
   Linking,
   Share,
+  Platform,
   useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../components/FlutterIcon";
 import * as Location from "expo-location";
 import MapCanvas from "../components/MapCanvas";
 import type { Coordinates } from "../components/MapCanvas.types";
@@ -336,6 +337,25 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           </View>
         </View>
+      )}
+      {Platform.OS !== "web" && (
+        <TouchableOpacity
+          accessibilityLabel="OpenStreetMap attribution"
+          onPress={() =>
+            Linking.openURL("https://www.openstreetmap.org/copyright")
+          }
+          style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            paddingHorizontal: 4,
+            backgroundColor: "#FFFFFFCC",
+          }}
+        >
+          <Text style={{ fontSize: 10, color: "#0078A8" }}>
+            © OpenStreetMap
+          </Text>
+        </TouchableOpacity>
       )}
       <Modal
         visible={sheet !== null}

@@ -1,5 +1,4 @@
-import { Text } from "../../src/components/Typography";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -10,253 +9,191 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Text } from "../../src/components/Typography";
 import { ChatApi, ChatConversationSummary } from "../../src/services/api";
-import { Colors, FontSize, Radius, Spacing } from "../../src/config/theme";
-
-function timeAgo(iso: string): string {
-  if (!iso) return "";
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
+import { Colors } from "../../src/config/theme";
 export default function ChatScreen() {
   const router = useRouter();
   const [conversations, setConversations] = useState<ChatConversationSummary[]>(
     [],
   );
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchConversations = useCallback(async () => {
+  const [error, setError] = useState("");
+  const load = useCallback(async () => {
     try {
-      const data = await ChatApi.listConversations();
-      setConversations(data);
-    } catch (e) {
-      console.warn(e);
+      setError("");
+      setConversations(await ChatApi.listConversations());
+    } catch {
+      setError("Chat belum dapat dimuat. Tarik ke bawah untuk mencoba lagi.");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
-
   useFocusEffect(
     useCallback(() => {
-      fetchConversations();
-    }, [fetchConversations]),
+      void load();
+    }, [load]),
   );
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchConversations();
-  };
-
-  const renderItem = ({ item }: { item: ChatConversationSummary }) => (
-    <TouchableOpacity
-      style={[
-        styles.row,
-        item.unreadCount > 0 && { backgroundColor: "#FAFEFF" },
-      ]}
-      onPress={() =>
-        router.push({
-          pathname: "/chat-detail",
-          params: { conversationId: item.id },
-        })
-      }
-      activeOpacity={0.7}
-    >
-      {/* Avatar */}
-      <View style={styles.avatarContainer}>
-        {item.otherUserAvatarUrl ? (
-          <Image
-            source={{ uri: item.otherUserAvatarUrl }}
-            style={styles.avatar}
-          />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarInitial}>
-              {item.otherUserName[0]?.toUpperCase()}
-            </Text>
-          </View>
-        )}
-        {item.unreadCount > 0 && <View style={styles.unreadDot} />}
-      </View>
-
-      {/* Info */}
-      <View style={styles.info}>
-        <View style={styles.infoRow}>
-          <Text
-            style={[styles.name, item.unreadCount > 0 && styles.nameUnread]}
-          >
-            {item.otherUserName}
-          </Text>
-          <Text style={styles.time}>{timeAgo(item.lastMessageTime)}</Text>
-        </View>
-        {item.itemTitle && (
-          <View style={styles.itemBadge}>
-            <Ionicons name="shirt-outline" size={10} color={Colors.primary} />
-            <Text style={styles.itemBadgeText} numberOfLines={1}>
-              {item.itemTitle}
-            </Text>
-          </View>
-        )}
-        <Text
-          style={[styles.lastMsg, item.unreadCount > 0 && styles.lastMsgUnread]}
-          numberOfLines={1}
-        >
-          {item.lastMessage || "No messages yet"}
-        </Text>
-      </View>
-
-      {/* Unread count */}
-      {item.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadCount}>
-            {item.unreadCount > 9 ? "9+" : item.unreadCount}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
+  const unread = conversations.reduce((sum, item) => sum + item.unreadCount, 0);
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.title}>Chat</Text>
-        {conversations.some((c) => c.unreadCount > 0) && (
-          <View
-            style={[styles.unreadBadge, { position: "absolute", right: 20 }]}
-          >
-            <Text style={styles.unreadCount}>
-              {conversations.reduce((sum, c) => sum + c.unreadCount, 0)}
-            </Text>
+        {unread > 0 && (
+          <View style={styles.total}>
+            <Text style={styles.totalText}>{unread}</Text>
           </View>
         )}
       </View>
-
+      {!!error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={Colors.primary} size="large" />
-        </View>
+        <ActivityIndicator style={{ flex: 1 }} color={Colors.primary} />
       ) : (
         <FlatList
           data={conversations}
-          keyExtractor={(i) => i.id}
-          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
+              refreshing={loading}
+              onRefresh={load}
               tintColor={Colors.primary}
             />
           }
+          contentContainerStyle={
+            !conversations.length ? { flex: 1 } : undefined
+          }
           ListEmptyComponent={
-            <View style={styles.centered}>
-              <Text style={styles.emptySub}>
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
                 Belum ada chat. Mulai dari halaman explore.
               </Text>
             </View>
           }
-          contentContainerStyle={
-            conversations.length === 0 ? { flex: 1 } : undefined
-          }
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.row,
+                item.unreadCount > 0 && { backgroundColor: "#FAFEFF" },
+              ]}
+              onPress={() =>
+                router.push({
+                  pathname: "/chat-detail",
+                  params: { conversationId: item.id },
+                })
+              }
+            >
+              {item.itemImageUrl ? (
+                <Image
+                  source={{ uri: item.itemImageUrl }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, styles.initial]}>
+                  <Text style={{ fontSize: 22 }}>
+                    {item.otherUserName[0]?.toUpperCase() || "?"}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.info}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {item.otherUserName}
+                  </Text>
+                  <Text style={styles.time}>{item.lastMessageTime}</Text>
+                </View>
+                {!!item.itemTitle && (
+                  <Text style={styles.itemTitle} numberOfLines={1}>
+                    {item.itemTitle}
+                  </Text>
+                )}
+                <View style={styles.messageRow}>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.message,
+                      { fontWeight: item.unreadCount > 0 ? "600" : "400" },
+                    ]}
+                  >
+                    {item.lastMessage || "Mulai percakapan…"}
+                  </Text>
+                  {item.unreadCount > 0 && (
+                    <View style={styles.unread}>
+                      <Text style={styles.unreadText}>{item.unreadCount}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
         />
       )}
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  header: { height: 56, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 20, fontWeight: "700", color: Colors.text },
-  centered: {
+  screen: { flex: 1, backgroundColor: "white" },
+  header: { height: 56, justifyContent: "center", alignItems: "center" },
+  title: { fontSize: 20, fontWeight: "700", color: "#222" },
+  total: {
+    position: "absolute",
+    right: 16,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  totalText: { color: "white", fontSize: 12, fontWeight: "700" },
+  row: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#EEFBFF",
+  },
+  initial: { justifyContent: "center", alignItems: "center" },
+  info: { flex: 1 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  name: { flex: 1, fontSize: 14, fontWeight: "700", color: "#222" },
+  time: { fontSize: 11, color: "#9E9E9E" },
+  itemTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  messageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 8,
+  },
+  message: { flex: 1, fontSize: 13, color: "#757575" },
+  unread: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unreadText: { fontSize: 11, fontWeight: "700", color: "white" },
+  empty: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing["2xl"],
+    padding: 16,
   },
-  emptyTitle: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.text },
-  emptySub: {
-    fontSize: FontSize.base,
-    color: Colors.textMuted,
-    textAlign: "center",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    gap: Spacing.md,
-  },
-  avatarContainer: { position: "relative" },
-  avatar: { width: 52, height: 52, borderRadius: 14 },
-  avatarFallback: {
-    backgroundColor: `${Colors.primary}26`,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarInitial: {
-    fontSize: FontSize.xl,
-    fontWeight: "700",
-    color: Colors.primary,
-  },
-  unreadDot: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  info: { flex: 1, gap: 3 },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  name: { fontSize: FontSize.base, fontWeight: "600", color: Colors.text },
-  nameUnread: { fontWeight: "800" },
-  time: { fontSize: FontSize.xs, color: Colors.textMuted },
-  itemBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: `${Colors.primary}15`,
-    borderRadius: Radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    alignSelf: "flex-start",
-  },
-  itemBadgeText: {
-    fontSize: FontSize.xs,
-    color: Colors.primary,
-    fontWeight: "600",
-  },
-  lastMsg: { fontSize: FontSize.sm, color: Colors.textMuted },
-  lastMsgUnread: { color: Colors.text, fontWeight: "600" },
-  unreadBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 5,
-  },
-  unreadCount: {
-    color: Colors.white,
-    fontSize: FontSize.xs,
-    fontWeight: "800",
-  },
-  separator: { height: 1, backgroundColor: Colors.borderLight, marginLeft: 80 },
+  emptyText: { fontSize: 14, color: "#0008", textAlign: "center" },
+  error: { fontSize: 12, color: Colors.error, padding: 16 },
 });

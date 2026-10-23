@@ -1,4 +1,4 @@
-import React, { createContext, forwardRef, useContext } from "react";
+import React, { forwardRef } from "react";
 import {
   Text as NativeText,
   TextInput as NativeTextInput,
@@ -6,56 +6,49 @@ import {
   type TextProps,
   type TextInputProps,
 } from "react-native";
-const Weight = createContext(400);
-const families: Record<number, string> = {
-  400: "JakartaRegular",
-  500: "JakartaMedium",
-  600: "JakartaSemiBold",
-  700: "JakartaBold",
-  800: "JakartaExtraBold",
-};
-function getWeight(value: string | number | undefined, inherited: number) {
-  if (!value) return inherited;
-  if (value === "bold") return 700;
-  if (value === "normal") return 400;
-  return Math.min(800, Math.max(400, Math.round(Number(value) / 100) * 100));
-}
+// The original Flutter app requests an unbundled Jakarta family and renders Roboto.
+// Bundle that same fallback font so browser and native text have matching metrics.
 export const Text = forwardRef<
   React.ComponentRef<typeof NativeText>,
   TextProps
->(function Text({ style, children, ...props }, ref) {
-  const parentWeight = useContext(Weight);
+>(function Text({ style, ...props }, ref) {
   const flat = StyleSheet.flatten(style);
-  const weight = getWeight(flat?.fontWeight, parentWeight);
+  const size = flat?.fontSize ?? 14;
   return (
-    <Weight.Provider value={weight}>
-      <NativeText
-        ref={ref}
-        {...props}
-        style={[
-          { fontFamily: families[weight] },
-          style,
-          { fontWeight: "normal" },
-        ]}
-      >
-        {children}
-      </NativeText>
-    </Weight.Provider>
+    <NativeText
+      ref={ref}
+      {...props}
+      style={[
+        {
+          fontFamily: "PickMeRoboto",
+          fontSize: 14,
+          lineHeight: size * (20 / 14),
+          letterSpacing: 0.25,
+          color: "#000000DE",
+        },
+        style,
+      ]}
+    />
   );
 });
 export const TextInput = forwardRef<
   React.ComponentRef<typeof NativeTextInput>,
   TextInputProps
 >(function TextInput({ style, ...props }, ref) {
-  const weight = getWeight(StyleSheet.flatten(style)?.fontWeight, 400);
+  const size = StyleSheet.flatten(style)?.fontSize ?? 16;
   return (
     <NativeTextInput
       ref={ref}
       {...props}
       style={[
-        { fontFamily: families[weight] },
+        {
+          fontFamily: "PickMeRoboto",
+          fontSize: 16,
+          lineHeight: size * 1.5,
+          letterSpacing: 0.5,
+          color: "#000000DE",
+        },
         style,
-        { fontWeight: "normal" },
       ]}
     />
   );

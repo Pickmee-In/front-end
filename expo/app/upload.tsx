@@ -12,7 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../src/components/FlutterIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ItemApi } from "../src/services/api";
 import { Text, TextInput } from "../src/components/Typography";
@@ -216,7 +216,8 @@ export default function UploadScreen() {
           <Text style={styles.titleLabel}>Title</Text>
           <TextInput
             accessibilityLabel="Title"
-            style={[styles.input, { borderRadius: 16 }]}
+            style={[styles.input, styles.titleInput]}
+            placeholderTextColor="#494F52"
             placeholder="e.g. Oversized denim jacket"
             value={title}
             onChangeText={setTitle}
@@ -231,7 +232,7 @@ export default function UploadScreen() {
             }}
           >
             <MaterialIcons
-              name="cloud-upload"
+              name="cloud-upload-outlined"
               size={48}
               color={Colors.primary}
             />
@@ -272,12 +273,10 @@ export default function UploadScreen() {
                 void pickPhotos(true);
               }}
             >
-              <MaterialIcons
-                name="photo-camera"
-                size={20}
-                color={Colors.primary}
-              />
-              <Text style={styles.photoActionText}>Take Photo</Text>
+              <View style={styles.photoActionIcon}>
+                <MaterialIcons name="camera-alt-outlined" size={24} color={Colors.primary} />
+              </View>
+              <Text style={styles.photoActionText}>Camera</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.photoAction}
@@ -285,12 +284,10 @@ export default function UploadScreen() {
                 void pickPhotos();
               }}
             >
-              <MaterialIcons
-                name="photo-library"
-                size={20}
-                color={Colors.primary}
-              />
-              <Text style={styles.photoActionText}>From Gallery</Text>
+              <View style={styles.photoActionIcon}>
+                <MaterialIcons name="image-outlined" size={24} color={Colors.primary} />
+              </View>
+              <Text style={styles.photoActionText}>Gallery</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.ai}>
@@ -457,6 +454,7 @@ const styles = StyleSheet.create({
     color: "#222",
     minHeight: 52,
   },
+  titleInput: { borderRadius: 16, fontSize: 16, lineHeight: 22, height: 48, minHeight: 48, paddingVertical: 12 },
   photosLabel: {
     fontSize: 14,
     fontWeight: "700",
@@ -490,7 +488,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     paddingHorizontal: 28,
-    paddingVertical: 10,
+    height: 32,
+    justifyContent: "center",
     backgroundColor: Colors.primary,
     borderRadius: 12,
     marginTop: 16,
@@ -508,20 +507,21 @@ const styles = StyleSheet.create({
   },
   photoActions: {
     flexDirection: "row",
-    gap: 12,
-    marginVertical: 20,
+    gap: 48,
+    marginTop: 32,
+    marginBottom: 28,
     justifyContent: "center",
   },
-  photoAction: {
-    borderWidth: 1,
-    borderColor: "#DDF7FF",
+  photoAction: { alignItems: "center", gap: 8 },
+  photoActionIcon: {
+    width: 52,
+    height: 52,
     borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
+    backgroundColor: "#F3FCFF",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
   },
-  photoActionText: { fontSize: 12, fontWeight: "600", color: Colors.primary },
+  photoActionText: { fontSize: 12, fontWeight: "600", color: "#222" },
   ai: {
     width: 320,
     maxWidth: "100%",

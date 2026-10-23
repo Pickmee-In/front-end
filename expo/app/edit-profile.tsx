@@ -11,11 +11,15 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "../src/components/FlutterIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, TextInput } from "../src/components/Typography";
 import { ProfileApi, UserProfile } from "../src/services/api";
+import {
+  InterestsEditor,
+  ProfilePreferencesPreview,
+} from "../src/components/InterestsEditor";
 import { Colors } from "../src/config/theme";
 
 export default function EditProfileScreen() {
@@ -25,6 +29,7 @@ export default function EditProfileScreen() {
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState("");
+  const [interests, setInterests] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -37,6 +42,13 @@ export default function EditProfileScreen() {
         setPhone(p.phone ?? "");
         setBio(p.bio ?? "");
         setLocation(p.locationLabel ?? "");
+        setInterests(
+          Array.isArray(p.preferences?.interests)
+            ? p.preferences.interests.filter(
+                (v): v is string => typeof v === "string",
+              )
+            : [],
+        );
       })
       .catch(() =>
         setError(
@@ -76,6 +88,7 @@ export default function EditProfileScreen() {
         phone,
         bio,
         locationLabel: location,
+        preferences: { ...profile?.preferences, interests },
       });
       router.back();
     } catch (e) {
@@ -109,7 +122,6 @@ export default function EditProfileScreen() {
                 <MaterialIcons name="arrow-back" size={24} />
               </TouchableOpacity>
               <Text style={styles.heading}>Edit Profile</Text>
-              <View style={styles.back} />
             </View>
             {loading ? (
               <ActivityIndicator
@@ -190,6 +202,8 @@ export default function EditProfileScreen() {
                       style={{ marginRight: 14 }}
                     />
                   </View>
+                  <InterestsEditor value={interests} onChange={setInterests} />
+                  <ProfilePreferencesPreview />
                   {!!error && (
                     <Text accessibilityRole="alert" style={styles.error}>
                       {error}
@@ -231,8 +245,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   back: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -263,13 +277,14 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "white",
     borderRadius: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    fontSize: 14,
+    fontSize: 16,
+    lineHeight: 22,
     minHeight: 48,
     marginBottom: 16,
   },
-  bio: { minHeight: 92, textAlignVertical: "top" },
+  bio: { minHeight: 89, textAlignVertical: "top" },
   location: {
     backgroundColor: "white",
     borderRadius: 10,

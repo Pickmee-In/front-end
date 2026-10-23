@@ -1,7 +1,8 @@
 # PickMe Frontend
 
-Frontend Expo berada di [`expo/`](expo/). Kode Flutter lama tetap tersedia di root
-sebagai acuan tampilan dan implementasi sebelumnya.
+Frontend Expo berada di [`expo/`](expo/). Kode Flutter yang sudah ada di repo tetap tersedia di root. Acuan visual Expo
+adalah folder `front-end` pada workspace pengembangan, commit `c7b20c6`,
+seperti dicatat dalam panduan kesamaan tampilan.
 
 - Website: https://pickme.nekomik.web.id
 - [Setup Expo dan environment FE/BE](expo/README.md)
@@ -24,4 +25,5 @@ terintegrasi; login Google native masih memerlukan integrasi terpisah.
 
 Source Flutter asli berada di `lib/`, dengan konfigurasi `pubspec.yaml`.
 Jalankan `flutter pub get` dan `flutter run` dari root untuk mengembangkan versi
-Flutter. Implementasi Expo mengikuti tata letak, warna, dan komponen layar ini.
+Flutter. Detail source referensi Expo dicatat di `expo/UI_PARITY.md`; isi root repo ini
+bukan snapshot lengkap dari referensi workspace tersebut.
