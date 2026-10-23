@@ -15,7 +15,8 @@ cp .env.example .env
 npm start
 ```
 
-Gunakan Expo Go yang mendukung SDK proyek atau development build yang sesuai.
+Gunakan development build untuk native karena Google Sign-In memakai modul native
+yang tidak tersedia di Expo Go.
 Untuk browser, jalankan `npm run web`.
 
 ## Environment frontend
@@ -23,7 +24,7 @@ Untuk browser, jalankan `npm run web`.
 | Variabel                           | Kegunaan                                               | Status                                                     |
 | ---------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
 | `EXPO_PUBLIC_API_BASE_URL`         | Root URL backend, tanpa `/api`                         | Perlu disesuaikan; fallback `http://localhost:3000`        |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | OAuth Web Client ID, sama dengan `GOOGLE_CLIENT_ID` BE | Wajib untuk Google Login di web; integrasi native terpisah |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | OAuth Web Client ID, sama dengan `GOOGLE_CLIENT_ID` BE | Wajib untuk Google Login web dan Android |
 
 Expo CLI otomatis membaca `.env`. Kode menggunakan akses langsung
 `process.env.EXPO_PUBLIC_API_BASE_URL` agar nilainya masuk ke bundle. Tidak perlu
@@ -111,10 +112,10 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
   ID token ditukar ke BE dan sesi memperbarui navigasi root. Tambahkan origin web
   ke Authorized JavaScript origins Google Cloud; jika OAuth masih Testing,
   tambahkan akun login ke test users. Client secret tidak digunakan oleh alur ini.
-- Login native (`login.tsx`) masih placeholder, sehingga Expo Go/native belum
-  mempunyai login Google yang berfungsi.
-- Peta native dan Places adalah konfigurasi terpisah. `GOOGLE_PLACES_API_KEY`
-  BE tidak otomatis mengonfigurasi Google Maps SDK pada build Android.
+- Login native (`login.tsx`) terhubung ke Google Sign-In dan API. Package/SHA-1
+  APK harus didaftarkan di Google Cloud; lihat [build Android](ANDROID_BUILD.md).
+- Peta native memakai Leaflet/OpenStreetMap dalam WebView dengan kode yang dibundel.
+  Google Maps SDK/API key tidak diperlukan.
 
 ## Pemeriksaan lokal
 
@@ -137,3 +138,7 @@ Lihat [Environment variables in EAS](https://docs.expo.dev/eas/environment-varia
 - Build: `npx expo export --platform web`; salin hasil `dist/` ke
   `/var/www/pickme/frontend`. Nginx memakai fallback `index.html` untuk route Expo.
 - Server config dan env BE disimpan di `/var/www/pickme`; secret tidak ada di Git.
+
+## APK Android
+
+Lihat [panduan build APK dan konfigurasi Google Android](ANDROID_BUILD.md).

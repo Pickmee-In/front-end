@@ -19,7 +19,9 @@ npm run web
 ```
 
 Build web: `npx expo export --platform web` dari `expo/`. Login Google web sudah
-terintegrasi; login Google native masih memerlukan integrasi terpisah.
+terintegrasi. Login Android memakai Google Sign-In dan memerlukan pendaftaran
+package/SHA-1 serta Web Client ID dari project Google Cloud yang sama.
+Lihat [panduan APK Android](expo/ANDROID_BUILD.md).
 
 ## Flutter
 

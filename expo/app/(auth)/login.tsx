@@ -1,5 +1,5 @@
 import { Text } from "../../src/components/Typography";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,34 +7,52 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { GoogleSignin, isSuccessResponse, isErrorWithCode, statusCodes } from "@react-native-google-signin/google-signin";
+import { AppConfig } from "../../src/config/app";
+import { AuthApi } from "../../src/services/api";
+import { AuthStorage } from "../../src/services/authStorage";
 import { MaterialIcons } from "../../src/components/FlutterIcon";
 import { Colors, FontSize, Radius, Spacing } from "../../src/config/theme";
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const submitting = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
-    if (isLoading) return;
+    if (submitting.current) return;
+    submitting.current = true;
     setIsLoading(true);
-
     try {
-      // NOTE: In production, integrate expo-auth-session or
-      // @react-native-google-signin/google-signin here.
-      // For now we show a placeholder.
-      Alert.alert(
-        "Google Sign-In",
-        "Google Sign-In requires native configuration.\n\n" +
-          "Set up EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in your .env " +
-          "and configure expo-auth-session for production.",
-      );
-    } catch (error: any) {
-      Alert.alert("Error", error.message ?? "Login failed");
+      if (!AppConfig.googleWebClientId || (Platform.OS === "ios" && !AppConfig.googleIosClientId)) {
+        Alert.alert("Login belum tersedia", "Konfigurasi login aplikasi belum lengkap. Silakan hubungi pengelola PickMe.");
+        return;
+      }
+      GoogleSignin.configure({
+        webClientId: AppConfig.googleWebClientId,
+        ...(AppConfig.googleIosClientId ? { iosClientId: AppConfig.googleIosClientId } : {}),
+      });
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const result = await GoogleSignin.signIn();
+      if (!isSuccessResponse(result)) return;
+      if (!result.data.idToken) throw new Error("Missing Google ID token");
+      const session = await AuthApi.loginWithGoogle(result.data.idToken);
+      await AuthStorage.saveSession({
+        accessToken: session.token,
+        refreshToken: session.refreshToken,
+        userName: session.user.name,
+      });
+    } catch (error) {
+      if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) return;
+      const unavailable = isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE;
+      Alert.alert("Login belum berhasil", unavailable
+        ? "Perbarui Google Play Services di perangkat ini, lalu coba lagi."
+        : "Periksa koneksi dan coba dengan akun Google yang diizinkan. Jika tetap gagal, hubungi pengelola PickMe.");
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };

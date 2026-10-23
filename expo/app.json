@@ -15,10 +15,10 @@
       "adaptiveIcon": {
         "backgroundColor": "#8CE4FF",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.pickmein.app"
+      "package": "com.pickmein.app",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -39,7 +39,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "PickMe needs access to your photos to upload items."
+          "photosPermission": "PickMe needs access to your photos to upload items.",
+          "cameraPermission": "PickMe needs your camera to photograph items.",
+          "microphonePermission": false
         }
       ]
     ]

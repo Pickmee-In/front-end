@@ -5,6 +5,7 @@ export const AppConfig = {
     process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000"
   ).replace(/\/+$/, ""),
 
-  /** Google Identity Services Web Client ID; native login needs separate integration. */
+  /** OAuth Web Client ID used by web and native ID-token verification. */
   googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "",
+  googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "",
 } as const;

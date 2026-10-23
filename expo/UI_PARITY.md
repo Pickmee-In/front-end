@@ -51,8 +51,8 @@ lain. Penyimpanan diuji lewat API VPS dengan akun uji sementara lalu dibersihkan
 
 ## Batas verifikasi dan perbedaan yang disengaja
 
-- Tombol Google web tetap memakai Google Identity Services; login native belum
-  diintegrasikan. Perubahan UI tidak menambahkan autentikasi native.
+- Tombol Google web tetap memakai Google Identity Services; login native kini
+  memakai Google Sign-In; aktivasi membutuhkan OAuth package/SHA-1 Android.
 - Public Profile dan Push Notifications ditampilkan nonaktif dengan keterangan
   “Segera tersedia”. Layanan profil publik dan pengiriman push belum tersedia;
   kontrol tersebut tidak berpura-pura menerapkan privasi atau mengaktifkan push.
