@@ -5,6 +5,10 @@ Versi yang terpasang saat panduan ini diperbarui: Expo SDK 58.0.14, React Native
 0.88.0, React 19.3.0, dan Expo Router 58.0.23. Ikuti `package-lock.json` untuk
 versi dependensi yang konsisten.
 
+APK Android: [PickMe 1.0.0 ARM64](https://pickme.nekomik.web.id/downloads/pickme-1.0.0-arm64.apk)
+untuk Android 7.0 ke atas. Detail verifikasi dan batas pengujian ada di
+[panduan build Android](ANDROID_BUILD.md#release-terverifikasi--24-oktober-2026).
+
 ## Menjalankan frontend
 
 ```bash

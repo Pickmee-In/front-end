@@ -57,7 +57,8 @@ lain. Penyimpanan diuji lewat API VPS dengan akun uji sementara lalu dibersihkan
   “Segera tersedia”. Layanan profil publik dan pengiriman push belum tersedia;
   kontrol tersebut tidak berpura-pura menerapkan privasi atau mengaktifkan push.
 - Rasterisasi font, emoji, shadow, keyboard, dan safe area dapat berbeda di perangkat.
-  Pemeriksaan visual dilakukan di browser; export Android diperiksa, belum diuji
+  Pemeriksaan visual dilakukan di browser; APK release Android berhasil dibangun
+  dan diverifikasi pada 24 Oktober 2026, tetapi belum diuji
   langsung pada perangkat Android/iOS.
 - Data pengguna asli tetap dipakai di production; foto/default user fixture hanya
   dipakai pada screenshot pembanding.

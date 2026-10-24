@@ -5,6 +5,7 @@ adalah folder `front-end` pada workspace pengembangan, commit `c7b20c6`,
 seperti dicatat dalam panduan kesamaan tampilan.
 
 - Website: https://pickme.nekomik.web.id
+- [Unduh APK Android 1.0.0 ARM64](https://pickme.nekomik.web.id/downloads/pickme-1.0.0-arm64.apk) — Android 7.0 ke atas; build dan signature sudah diverifikasi, pengujian perangkat belum dilakukan.
 - [Setup Expo dan environment FE/BE](expo/README.md)
 - [Acuan kesamaan tampilan Flutter → Expo](expo/UI_PARITY.md)
 

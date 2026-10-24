@@ -92,3 +92,20 @@ Signing key dan password tetap berada pada mesin lokal.
 Expo SDK 58 memerlukan compile SDK 37; target SDK tetap 36. Paket platform
 di SDK Manager bernama `platforms;android-37.0`, bukan `platforms;android-37`.
 Build-tools menggunakan 36.0.0.
+
+
+## Release terverifikasi — 24 Oktober 2026
+
+- APK: [PickMe 1.0.0 ARM64](https://pickme.nekomik.web.id/downloads/pickme-1.0.0-arm64.apk).
+- Package `com.pickmein.app`, versionCode `1`, Android 7.0/API 24 ke atas,
+  ABI `arm64-v8a`, compile SDK 37 dan target SDK 36.
+- Ukuran: 37.429.871 byte (35,7 MiB). APK release tidak debuggable.
+- SHA-256: `8cb142b382741add83ede85aa57b1897ea6ba5ae579c25e76e63ac79b89d262a`.
+- Build Gradle `assembleRelease` berhasil. Signing v2/v3 dan zipalign 16 KB
+  lolos verifikasi; seluruh 24 library native memiliki alignment ELF 16 KB.
+- Bundle menggunakan API production dan Web Client ID project `pickme-508408`.
+- APK dikompilasi unsigned di VPS, kemudian ditandatangani secara lokal dengan
+  sertifikat SHA-1 yang tercantum di atas. Private key tidak dikirim ke VPS.
+- Belum diuji langsung pada perangkat Android: instalasi, tampilan native,
+  izin kamera/lokasi, dan login Google perlu diuji pada perangkat ARM64 dengan
+  Google Play Services. Saat OAuth masih Testing, gunakan akun di Test users.
