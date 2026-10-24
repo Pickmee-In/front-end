@@ -28,7 +28,7 @@ function run(command, args, cwd) {
   if (result.status !== 0) process.exit(result.status || 1);
 }
 run(process.execPath,[path.join(root,'node_modules/expo/bin/cli'),'prebuild','--platform','android','--no-install'],buildRoot);
-run('./gradlew',[':app:assembleRelease','--no-daemon','--max-workers=1','-PreactNativeArchitectures=arm64-v8a','-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m','-Dkotlin.daemon.jvm.options=-Xmx512m'],path.join(buildRoot,'android'));
+run('./gradlew',[':app:assembleRelease','--no-daemon','--max-workers=1','-PreactNativeArchitectures=arm64-v8a','-Pandroid.enableMinifyInReleaseBuilds=false','-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m','-Dkotlin.daemon.jvm.options=-Xmx512m'],path.join(buildRoot,'android'));
 const apk = path.join(buildRoot,'android/app/build/outputs/apk/release/app-release.apk');
 const version = JSON.parse(fs.readFileSync(path.join(root,'app.json'),'utf8')).expo.version;
 const output = path.join(root,'releases',`pickme-${version}-arm64.apk`);

@@ -41,7 +41,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:android": "node scripts/build-android.cjs",
-    "bundle:map": "node scripts/bundle-map-assets.cjs"
+    "bundle:map": "node scripts/bundle-map-assets.cjs",
+    "sign:android": "node scripts/sign-android.cjs"
   },
   "private": true
 }

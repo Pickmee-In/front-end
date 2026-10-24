@@ -5,7 +5,9 @@ module.exports = function withAndroidReleaseSigning(config) {
     if (!config.modResults.contents.includes(marker)) {
       config.modResults.contents += `
 ${marker}
-if (System.getenv('PICKME_KEYSTORE_PATH')) {
+if (System.getenv('PICKME_UNSIGNED_BUILD') == '1') {
+    android.buildTypes.release.signingConfig = null
+} else if (System.getenv('PICKME_KEYSTORE_PATH')) {
     android.signingConfigs.create('pickmeRelease') {
         storeFile file(System.getenv('PICKME_KEYSTORE_PATH'))
         storePassword System.getenv('PICKME_KEYSTORE_PASSWORD')

@@ -5,6 +5,7 @@ module.exports = ({ config }) => {
     plugins: [
       ...(config.plugins || []),
       './plugins/withAndroidReleaseSigning',
+      './plugins/withAndroidSdk',
       // Android uses autolinking and the package + certificate registered in Google Cloud.
       // The library's non-Firebase plugin only configures the iOS URL scheme.
       ...(iosClientId ? [['@react-native-google-signin/google-signin', {

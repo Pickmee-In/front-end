@@ -1,0 +1,28 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { spawnSync } = require('node:child_process');
+const root = path.resolve(__dirname, '..');
+const input = process.argv[2];
+if (!input || !fs.existsSync(input)) throw new Error('Usage: node scripts/sign-android.cjs /path/to/app-release-unsigned.apk');
+const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+if (!sdk) throw new Error('Set ANDROID_HOME to the local Android SDK.');
+const versions = fs.readdirSync(path.join(sdk, 'build-tools')).filter(v => /^\d+\.\d+\.\d+$/.test(v)).sort((a,b) => b.localeCompare(a,undefined,{numeric:true}));
+if (!versions.length) throw new Error('Android build-tools are missing.');
+const bin = path.join(sdk, 'build-tools', versions[0]);
+const creds = JSON.parse(fs.readFileSync(process.env.PICKME_ANDROID_CREDENTIALS || path.join(root, '.credentials/android.json'),'utf8'));
+const version = JSON.parse(fs.readFileSync(path.join(root,'app.json'),'utf8')).expo.version;
+const dir = path.join(root, 'releases');fs.mkdirSync(dir,{recursive:true});
+const aligned = path.join(dir, 'pickme-aligned-unsigned.apk');
+const output = path.join(dir, `pickme-${version}-arm64.apk`);
+const env = {...process.env, PICKME_STORE_PASS:creds.storePassword, PICKME_KEY_PASS:creds.keyPassword};
+function run(name,args){const r=spawnSync(path.join(bin,name),args,{env,stdio:'inherit'});if(r.error)throw r.error;if(r.status!==0)process.exit(r.status||1);}
+run('zipalign',['-P','16','-f','4',path.resolve(input),aligned]);
+run('apksigner',['sign','--ks',creds.keystorePath,'--ks-key-alias',creds.keyAlias,'--ks-pass','env:PICKME_STORE_PASS','--key-pass','env:PICKME_KEY_PASS','--v4-signing-enabled','false','--out',output,aligned]);
+run('apksigner',['verify','--verbose','--print-certs',output]);
+run('zipalign',['-c','-P','16','4',output]);
+const digest=crypto.createHash('sha256').update(fs.readFileSync(output)).digest('hex');
+fs.writeFileSync(output+'.sha256',`${digest}  ${path.basename(output)}\n`);
+fs.unlinkSync(aligned);
+console.log(`Verified signed APK: ${output}`);
+console.log(`SHA-256: ${digest}`);

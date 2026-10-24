@@ -34,21 +34,21 @@ Referensi:
 
 ## Build lokal
 
-Prasyarat: Node sesuai Expo SDK, Java 21, Android SDK/NDK dan Gradle yang diminta
+Prasyarat: Node sesuai Expo SDK, Java 17 atau 21, Android SDK/NDK dan Gradle yang diminta
 proyek. Build pertama dapat mengunduh komponen SDK/Gradle tambahan.
 
 ```bash
 npm ci
 export ANDROID_HOME=/path/to/Android/Sdk
 export EXPO_PUBLIC_API_BASE_URL=https://pickme.nekomik.web.id
-export EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=WEB_CLIENT_ID_DARI_PROJECT_PICKME_508408
+export EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=931559803606-89n7821p7fr5noukioe3n1ca0qfo0vmp.apps.googleusercontent.com
 export PICKME_BUILD_DIR=/tmp/pickme-android-build-new
 npm run build:android
 ```
 
 `PICKME_BUILD_DIR` harus kosong. Script menyalin source, membuat direktori native
 melalui Expo prebuild, lalu menjalankan `assembleRelease` untuk `arm64-v8a`
-dengan satu worker. Hasil disalin ke `releases/pickme-1.0.0-arm64.apk`.
+dengan satu worker dan R8 dimatikan untuk APK instalasi langsung. Hasil disalin ke `releases/pickme-1.0.0-arm64.apk`.
 
 Signing dibaca dari `.credentials/android.json` (atau path yang ditentukan
 `PICKME_ANDROID_CREDENTIALS`), dengan field `keystorePath`, `keyAlias`,
@@ -75,3 +75,20 @@ pada `assets/licenses/Leaflet.txt`. Tile/foto/API tetap memerlukan internet.
   toolchain macOS/EAS. `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` disediakan untuk itu.
 - Hasil build dan pengujian perangkat dicatat setelah kompilasi selesai; export
   JavaScript saja tidak dianggap sebagai APK yang berhasil dibangun.
+
+## Kompilasi terpisah dari signing
+
+Build server tidak menerima signing key. Set `PICKME_UNSIGNED_BUILD=1` saat
+prebuild dan Gradle untuk menghasilkan APK unsigned. Setelah APK diunduh:
+
+```bash
+ANDROID_HOME=/path/to/Android/Sdk npm run sign:android -- /path/to/app-release-unsigned.apk
+```
+
+Script menjalankan zipalign 16 KB, menandatangani dengan credential lokal,
+memverifikasi signature dan alignment, lalu menulis checksum SHA-256.
+Signing key dan password tetap berada pada mesin lokal.
+
+Expo SDK 58 memerlukan compile SDK 37; target SDK tetap 36. Paket platform
+di SDK Manager bernama `platforms;android-37.0`, bukan `platforms;android-37`.
+Build-tools menggunakan 36.0.0.
